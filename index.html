@@ -1,0 +1,1201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Code Quarry: learn Python for GCSE</title>
+<meta name="description" content="Try World 1 free: a block-mining game that teaches Python from zero to GCSE. Real code runs in the browser, quests are checked automatically, and a parent view shows which skills are secure.">
+<meta property="og:title" content="Code Quarry: learn Python for GCSE">
+<meta property="og:description" content="Try World 1 free: a block-mining game that teaches Python from zero to GCSE. Nothing to install.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://vasanthshanmugam.github.io/python_gcse/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%236b4a2e'/%3E%3Crect width='16' height='6' fill='%235fa83a'/%3E%3C/svg%3E">
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: blocky night-sky world. Quest path down the left like a mine shaft, the active quest in the middle. Single deliberate dark look. */
+:root{
+  --sky:#141a2b; --sky-2:#1d2540; --panel:#232c4a; --panel-2:#2b3558;
+  --dirt:#6b4a2e; --dirt-dark:#4a321f; --grass:#5fa83a; --grass-dark:#3f7a24;
+  --stone:#8a8f9c; --text:#eef1f8; --muted:#a9b1c9; --line:#3a4570;
+  --diamond:#5ce1e6; --gold:#f2c94c; --iron:#d8c8b8; --coal:#2a2a2e; --red:#e5574a; --ok:#7bd85a;
+  --code-bg:#0f1220; --code-fg:#e6edf3;
+  --f-display:"Press Start 2P", ui-monospace, monospace;
+  --f-body:"Atkinson Hyperlegible", system-ui, -apple-system, Segoe UI, sans-serif;
+  --f-code:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+code,pre,textarea,#console,.gutter,.inrow input{font-variant-ligatures:none}  /* show >= and == as typed, never as joined symbols */
+html,body{background:var(--sky);color:var(--text)}
+body{font-family:var(--f-body);font-size:16px;line-height:1.55;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--sky-2)}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* Header */
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--sky-2);border-bottom:4px solid var(--grass);box-shadow:0 4px 0 var(--dirt)}
+.hd{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding-block:12px}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-size:15px;letter-spacing:1px;color:var(--gold);text-shadow:2px 2px 0 #000}
+.logo .blk{width:22px;height:22px;background:linear-gradient(var(--grass) 0 35%,var(--dirt) 35%);box-shadow:inset -3px -3px 0 rgba(0,0,0,.3)}
+.stats{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-left:auto}
+.chip{display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--line);padding:6px 10px;font-size:14px;font-variant-numeric:tabular-nums}
+.chip b{font-family:var(--f-display);font-size:11px;color:var(--gold)}
+.xpbar{width:110px;height:12px;background:var(--code-bg);border:2px solid #000;position:relative}
+.xpbar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(var(--ok),var(--grass-dark));width:0;transition:width .5s}
+.ore{width:14px;height:14px;display:inline-block;box-shadow:inset -2px -2px 0 rgba(0,0,0,.35)}
+.ore.coal{background:var(--coal);outline:2px solid #555}
+.ore.iron{background:var(--iron)}
+.ore.gold{background:var(--gold)}
+.ore.diamond{background:var(--diamond)}
+.flame{width:12px;height:14px;background:linear-gradient(#ffd25a,#ff7a2e 60%,var(--red));clip-path:polygon(50% 0,80% 35%,100% 70%,70% 100%,30% 100%,0 70%,25% 40%)}
+.tabs{display:flex;gap:6px}
+.tab{font-family:var(--f-display);font-size:10px;padding:9px 12px;background:var(--panel);color:var(--muted);border:2px solid var(--line);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--grass-dark);color:#fff;border-color:var(--grass)}
+.tab:focus-visible,button:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid var(--diamond);outline-offset:2px}
+
+/* Main grid */
+main{padding-block:20px 48px}
+.grid{display:grid;grid-template-columns:260px minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}.path{order:2}header{position:static}}
+
+/* Quest path */
+.path{background:var(--panel);border:3px solid #000;box-shadow:inset 0 0 0 3px var(--line)}
+.path h2{font-family:var(--f-display);font-size:11px;margin:0;padding:14px 14px 10px;color:var(--gold);line-height:1.6}
+.path h2 small{display:block;font-family:var(--f-body);font-size:13px;color:var(--muted);letter-spacing:0;margin-top:4px}
+.qlist{list-style:none;margin:0;padding:0 10px 10px;display:flex;flex-direction:column;gap:6px}
+.qbtn{width:100%;display:flex;align-items:center;gap:10px;text-align:left;font:inherit;font-size:14px;color:var(--text);background:var(--panel-2);border:2px solid var(--line);padding:8px 10px;cursor:pointer}
+.qbtn:hover:not(:disabled){border-color:var(--stone)}
+.qbtn[aria-current="true"]{border-color:var(--gold);background:#36406a}
+.qbtn:disabled{cursor:not-allowed;opacity:.5}
+.qbtn .st{flex:none;width:22px;height:22px;display:grid;place-items:center;font-family:var(--f-display);font-size:9px;background:var(--stone);color:#111;box-shadow:inset -3px -3px 0 rgba(0,0,0,.3)}
+.qbtn.done .st{background:var(--ok)}
+.qbtn.boss .st{background:var(--red);color:#fff}
+.qbtn.boss.done .st{background:var(--diamond);color:#111}
+.qbtn .nm{min-width:0}
+.qbtn .tg{display:block;font-size:12px;color:var(--muted)}
+.worlds{border-top:3px solid #000;padding:12px 10px;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.worlds .lbl{font-family:var(--f-display);font-size:9px;color:var(--gold);padding:0 4px 4px}
+.wbtn{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;font:inherit;font-size:13px;color:var(--text);background:transparent;border:2px solid transparent;padding:5px 6px;cursor:pointer}
+.wbtn:hover:not(:disabled){border-color:var(--stone)}
+.wbtn[aria-current="true"]{border-color:var(--gold);background:var(--panel-2)}
+.wbtn:disabled{cursor:not-allowed;color:var(--muted)}
+.wbtn .wst{flex:none;font-family:var(--f-display);font-size:8px;color:var(--stone)}
+.wbtn.done .wst{color:var(--ok)}
+
+/* Quest card */
+.card{background:var(--panel);border:3px solid #000;box-shadow:inset 0 0 0 3px var(--line),6px 6px 0 rgba(0,0,0,.35);padding:20px;display:flex;flex-direction:column;gap:18px;min-width:0}
+.eyebrow{font-family:var(--f-display);font-size:10px;color:var(--diamond);letter-spacing:1px}
+.card h1{font-family:var(--f-display);font-size:clamp(15px,2.4vw,20px);line-height:1.5;margin:6px 0 0;text-wrap:balance;color:#fff;text-shadow:2px 2px 0 #000}
+.learn{font-size:16px;max-width:68ch}
+.learn p{margin:0 0 10px}
+.learn code,.task code{font-family:var(--f-code);font-size:.92em;background:var(--code-bg);padding:1px 6px;border:1px solid var(--line)}
+pre.ex{margin:6px 0 10px;background:var(--code-bg);color:var(--code-fg);font-family:var(--f-code);font-size:14px;padding:12px 14px;border-left:4px solid var(--diamond);overflow-x:auto}
+.task{background:linear-gradient(var(--dirt),var(--dirt-dark));border:3px solid #000;box-shadow:inset 0 4px 0 var(--grass);padding:14px 16px 12px}
+.task .lbl{font-family:var(--f-display);font-size:10px;color:var(--gold);margin-bottom:6px}
+.task p{margin:0;max-width:68ch}
+.gcse{font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.gcse span{font-family:var(--f-display);font-size:8px;background:var(--panel-2);border:1px solid var(--line);padding:4px 6px;color:var(--iron)}
+
+/* Editor + console */
+.ide{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:1000px){.ide{grid-template-columns:minmax(0,1fr)}}
+.pane{display:flex;flex-direction:column;min-width:0;border:3px solid #000;background:var(--code-bg)}
+.pane .bar{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#1a1f33;border-bottom:2px solid #000;font-family:var(--f-display);font-size:9px;color:var(--muted)}
+.pane .bar .sp{margin-left:auto;font-family:var(--f-body);font-size:12px}
+.edwrap{display:flex;min-height:240px}
+.gutter{flex:none;padding:12px 8px 12px 10px;text-align:right;color:#55607f;font-family:var(--f-code);font-size:15px;line-height:1.6;user-select:none;white-space:pre}
+textarea#code{flex:1;min-width:0;resize:vertical;min-height:240px;border:0;background:transparent;color:var(--code-fg);font-family:var(--f-code);font-size:15px;line-height:1.6;padding:12px 12px 12px 4px;tab-size:4;white-space:pre;overflow-x:auto;caret-color:var(--diamond)}
+textarea#code:focus{outline:none}
+#console{flex:1;min-height:240px;max-height:360px;overflow:auto;padding:12px;font-family:var(--f-code);font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:#cfe8cf}
+#console .err{color:#ffb4ab}
+#console .sys{color:#6c7899}
+#console .in{color:var(--gold)}
+.inrow{display:flex;gap:6px;align-items:center;margin-top:4px}
+.inrow input{flex:1;min-width:0;background:#000;border:2px solid var(--gold);color:var(--gold);font-family:var(--f-code);font-size:14px;padding:4px 8px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{font-family:var(--f-display);font-size:11px;padding:12px 16px;border:3px solid #000;cursor:pointer;color:#111;background:var(--stone);box-shadow:inset -4px -4px 0 rgba(0,0,0,.3),inset 4px 4px 0 rgba(255,255,255,.25)}
+.btn:active{transform:translateY(2px)}
+.btn.run{background:var(--ok)}
+.btn.next{background:var(--gold)}
+.btn.ghost{background:var(--panel-2);color:var(--text)}
+.btn.stop{background:var(--red);color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.kbd{font-size:13px;color:var(--muted)}
+
+/* Feedback */
+.fb{border:3px solid #000;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.fb.bad{background:#3a1f26;box-shadow:inset 4px 0 0 var(--red)}
+.fb.good{background:#1f3a24;box-shadow:inset 4px 0 0 var(--ok)}
+.fb.info{background:var(--panel-2);box-shadow:inset 4px 0 0 var(--diamond)}
+.fb .h{font-family:var(--f-display);font-size:11px;line-height:1.6}
+.fb.bad .h{color:#ffb4ab}.fb.good .h{color:var(--ok)}.fb.info .h{color:var(--diamond)}
+.fb p{margin:0;max-width:68ch}
+.fb pre{margin:4px 0 0;background:var(--code-bg);padding:10px 12px;font-family:var(--f-code);font-size:14px;overflow-x:auto;border:1px solid var(--line)}
+.reward{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-variant-numeric:tabular-nums}
+.reward span{display:flex;gap:6px;align-items:center}
+
+/* Parent view */
+.parent{display:flex;flex-direction:column;gap:18px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.tile{background:var(--panel);border:3px solid #000;padding:14px}
+.tile .v{font-family:var(--f-display);font-size:18px;color:var(--gold);font-variant-numeric:tabular-nums}
+.tile .k{font-size:13px;color:var(--muted);margin-top:8px}
+.tblwrap{overflow-x:auto;border:3px solid #000;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{font-family:var(--f-display);font-size:9px;color:var(--muted);background:var(--panel-2)}
+.pill{display:inline-block;font-size:12px;padding:2px 8px;border:1px solid}
+.pill.d{color:var(--ok);border-color:var(--ok)}
+.pill.s{color:var(--gold);border-color:var(--gold)}
+.pill.n{color:var(--stone);border-color:var(--line)}
+.note{font-size:14px;color:var(--muted);max-width:70ch;margin:0}
+.parent h2{font-family:var(--f-display);font-size:12px;line-height:1.6;color:var(--gold);margin:8px 0 0}
+.summary{background:var(--panel);border:3px solid #000;box-shadow:inset 0 0 0 3px var(--line);padding:18px 20px}
+.summary h1{font-family:var(--f-display);font-size:14px;line-height:1.6;margin:0 0 10px;color:#fff}
+.summary p{margin:0 0 8px;max-width:72ch}
+.summary p:last-child{margin-bottom:0}
+.meter{display:inline-flex;gap:3px;vertical-align:middle}
+.meter i{width:14px;height:14px;background:var(--code-bg);border:2px solid var(--line)}
+.meter.l1 i:nth-child(-n+1){background:var(--gold);border-color:#000}
+.meter.l2 i:nth-child(-n+2){background:var(--iron);border-color:#000}
+.meter.l3 i{background:var(--ok);border-color:#000}
+.lvl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;white-space:nowrap}
+td small,.sub{color:var(--muted);font-size:13px}
+.chat{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.chat li{background:var(--panel);border:3px solid #000;padding:12px 14px}
+.chat b{display:block}
+.chat p{margin:4px 0 0;max-width:72ch}
+.wrow td{background:var(--panel-2);font-family:var(--f-display);font-size:9px;color:var(--gold);line-height:1.6}
+.timer{font-family:var(--f-display);font-size:11px;padding:10px 12px;background:var(--code-bg);border:3px solid #000;color:var(--diamond);font-variant-numeric:tabular-nums}
+.timer.over{color:var(--red)}
+.foot{color:var(--muted);font-size:13px;padding-block:0 32px}
+.foot p{max-width:80ch;margin:0}
+.foot a{color:var(--diamond)}
+dialog{background:var(--panel);color:var(--text);border:3px solid #000;box-shadow:inset 0 0 0 3px var(--line),8px 8px 0 rgba(0,0,0,.45);padding:24px;width:min(560px,calc(100vw - 32px));overflow:hidden}
+dialog::backdrop{background:rgba(8,10,20,.8)}
+dialog h2{font-family:var(--f-display);font-size:16px;line-height:1.6;color:var(--gold);margin:0 0 12px;text-shadow:2px 2px 0 #000}
+dialog p{margin:0 0 10px;position:relative}
+dialog .actions{margin-top:16px;position:relative}
+.fall{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.fall .ore{position:absolute;top:-20px;animation:fall 2.6s linear infinite}
+@keyframes fall{to{transform:translateY(520px)}}
+@media (prefers-reduced-motion:reduce){.fall{display:none}}
+@media print{
+  :root{--panel:#fff;--panel-2:#eee;--text:#000;--muted:#444;--gold:#000;--line:#999;--code-bg:#fff;color-scheme:light}
+  html,body{background:#fff;color:#000}
+  header,.foot,#view-quests,.no-print,.toast,dialog{display:none!important}
+  .summary h1,.tile .v,th{color:#000}
+  .summary,.tile,.tblwrap,.chat li{box-shadow:none;border:1px solid #000;break-inside:avoid}
+  table{min-width:0}
+}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--gold);color:#111;font-family:var(--f-display);font-size:11px;padding:12px 16px;border:3px solid #000;z-index:20}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@keyframes pop{0%{transform:scale(.9)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
+.fb.good{animation:pop .35s ease-out}
+/* Login and family pages */
+.auth{display:flex;justify-content:center;padding-block:24px}
+.authbox{width:100%;max-width:460px;display:flex;flex-direction:column;gap:14px}
+.authbox h1{margin:0}
+.field{display:flex;flex-direction:column;gap:6px;font-size:14px}
+.field input{font:inherit;font-size:16px;color:var(--text);background:var(--code-bg);border:3px solid #000;padding:10px;width:100%}
+.field small{color:var(--muted)}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:14px}
+.check input{margin-top:4px;flex:none;width:18px;height:18px}
+.linkbtn{background:none;border:0;padding:4px 0;font:inherit;font-size:14px;color:var(--diamond);text-decoration:underline;cursor:pointer;text-align:left}
+.msg{font-size:14px;margin:0;color:var(--muted)}
+.msg.err{color:#ff9d94}
+.msg.good{color:var(--ok)}
+.kid{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.kid .actions{margin:0}
+.whochip{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.btn.small{font-size:9px;padding:8px 10px}
+.field select{font:inherit;font-size:16px;color:var(--text);background:var(--code-bg);border:3px solid #000;padding:10px;width:100%}
+.board-tabs{display:flex;flex-wrap:wrap;gap:6px}
+tr.me td{background:var(--panel-2);color:var(--gold);font-weight:700}
+#b-wrap table{min-width:0;width:100%}
+#b-wrap th,#b-wrap td{padding-inline:8px;overflow-wrap:anywhere}
+</style>
+
+<header>
+  <div class="wrap hd">
+    <div class="logo"><span class="blk" aria-hidden="true"></span>CODE QUARRY</div>
+    <div class="tabs" id="tabs" role="tablist" hidden>
+      <button class="tab" id="tab-quests" role="tab" aria-selected="true">Quests</button>
+      <button class="tab" id="tab-board" role="tab" aria-selected="false">Leaderboard</button>
+      <button class="tab" id="tab-parent" role="tab" aria-selected="false">Parent view</button>
+    </div>
+    <div class="stats" id="stats" hidden>
+      <div class="chip" title="Level"><b id="lvl">LV 1</b><div class="xpbar" aria-hidden="true"><i id="xpfill"></i></div><span id="xptxt">0 / 150 XP</span></div>
+      <div class="chip" title="Day streak"><span class="flame" aria-hidden="true"></span><span id="streak">0 day streak</span></div>
+      <div class="chip" title="Ore collected"><span class="ore coal"></span><span id="o-coal">0</span><span class="ore iron"></span><span id="o-iron">0</span><span class="ore gold"></span><span id="o-gold">0</span><span class="ore diamond"></span><span id="o-diamond">0</span></div>
+    </div>
+    <div class="whochip" id="whochip" hidden><span id="who"></span><button class="btn ghost small" id="logout">LOG OUT</button></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="view-loading" class="auth"><div class="summary authbox"><p class="msg" id="loading-msg" role="status">Loading...</p></div></section>
+
+  <section id="view-auth" class="auth" hidden>
+    <form class="summary authbox" id="a-form" novalidate></form>
+  </section>
+
+  <section id="view-family" class="parent" hidden>
+    <div class="summary"><h1>YOUR FAMILY</h1><p>Create a login for each child. They log in with the username and password you choose here, and don't need an email address. You can view each child's report from here.</p></div>
+    <h2>CHILDREN</h2>
+    <ul class="chat" id="f-list"></ul>
+    <h2>YOUR PLAN</h2>
+    <div class="summary authbox" id="f-plan" style="max-width:none"></div>
+    <h2>ADD A CHILD</h2>
+    <form class="summary authbox" id="f-add" novalidate>
+      <label class="field">Username<input id="f-user" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="20" required><small>3 to 20 letters, numbers, - or _. Please don't use your child's full name.</small></label>
+      <label class="field">Password<input id="f-pass" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="72" required><small>At least 8 characters. Write it down for your child.</small></label>
+      <div id="f-extra" style="display:contents"></div>
+      <div><button class="btn next" type="submit">CREATE LOGIN</button></div>
+      <p class="msg" id="f-msg" role="status"></p>
+    </form>
+    <div class="actions no-print"><button class="btn ghost" id="f-delete">DELETE MY ACCOUNT</button></div>
+  </section>
+
+  <section id="view-board" class="parent" hidden>
+    <div class="actions no-print" id="b-backrow" hidden><button class="btn ghost" id="b-back">&#9664; BACK TO FAMILY</button></div>
+    <div class="summary"><h1 id="b-title">LEADERBOARD</h1><p id="b-note"></p></div>
+    <div class="board-tabs"><button class="tab" id="b-overall" aria-pressed="true">Everyone</button><button class="tab" id="b-school" aria-pressed="false">My school</button></div>
+    <p class="msg" id="b-msg" role="status"></p>
+    <div class="tblwrap" id="b-wrap"><table><thead><tr><th>PLACE</th><th>NICKNAME</th><th id="b-yearh">YEAR</th><th>POINTS</th></tr></thead><tbody id="b-rows"></tbody></table></div>
+    <p class="note">Only logged-in players can see this. It shows nicknames, never names or usernames. Your school's board can only be seen by families at your school.</p>
+  </section>
+
+  <section id="view-quests" class="grid" hidden>
+    <nav class="path" aria-label="Quests">
+      <h2 id="wname"></h2>
+      <ol class="qlist" id="qlist"></ol>
+      <div class="worlds"><div class="lbl">WORLDS</div><div id="worlds" style="display:contents"></div></div>
+    </nav>
+
+    <article class="card" id="card">
+      <div>
+        <div class="eyebrow" id="qeyebrow"></div>
+        <h1 id="qtitle"></h1>
+      </div>
+      <div class="learn" id="qlearn"></div>
+      <div class="task">
+        <div class="lbl">YOUR QUEST</div>
+        <p id="qtask"></p>
+      </div>
+      <div class="gcse" id="qgcse"></div>
+
+      <div class="ide">
+        <div class="pane">
+          <div class="bar">main.py<span class="sp">Tab = 4 spaces</span></div>
+          <div class="edwrap"><div class="gutter" id="gutter">1</div><textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Python code editor"></textarea></div>
+        </div>
+        <div class="pane">
+          <div class="bar">OUTPUT<span class="sp" id="runstate">Ready</span></div>
+          <div id="console" aria-live="polite"><span class="sys">Press RUN to see what your code does.</span></div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn run" id="run">&#9654; RUN</button>
+        <button class="btn ghost" id="hint">GET A HINT</button>
+        <button class="btn ghost" id="reset">RESET CODE</button>
+        <span class="timer" id="etimer" hidden></span>
+        <span class="kbd">Ctrl + Enter also runs</span>
+      </div>
+      <div id="feedback"></div>
+    </article>
+  </section>
+
+  <section id="view-parent" class="parent" hidden>
+    <div class="actions no-print" id="p-backrow" hidden><button class="btn ghost" id="p-back">&#9664; BACK TO FAMILY</button></div>
+    <div class="summary" id="p-summary"></div>
+    <div class="tiles">
+      <div class="tile"><div class="v" id="p-done">0/0</div><div class="k">Quests finished</div></div>
+      <div class="tile"><div class="v" id="p-time">0m</div><div class="k">Time practising</div></div>
+      <div class="tile"><div class="v" id="p-streak">0</div><div class="k">Current day streak</div></div>
+      <div class="tile"><div class="v" id="p-days">0</div><div class="k">Days practised</div></div>
+      <div class="tile"><div class="v" id="p-exam">0/0</div><div class="k">Exam questions finished</div></div>
+    </div>
+
+    <h2>GCSE SKILLS</h2>
+    <p class="note">You don't need to know any Python to read this. Each skill is rated by how much help was needed to finish its quests: <b>Learning</b> (needed the answer or is still working on it), <b>Getting there</b> (finished, with some hints), <b>Confident</b> (all quests finished with little or no help).</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>SKILL</th><th>WHAT IT MEANS</th><th>LEVEL</th><th>QUESTS</th></tr></thead>
+        <tbody id="p-skills"></tbody>
+      </table>
+    </div>
+
+    <h2>WORTH A CHAT</h2>
+    <ul class="chat" id="p-chat"></ul>
+
+    <h2>QUEST BY QUEST</h2>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>QUEST</th><th>STATUS</th><th>RUNS</th><th>HINTS</th><th>ANSWER SHOWN</th><th>FINISHED</th></tr></thead>
+        <tbody id="p-rows"></tbody>
+      </table>
+    </div>
+    <h2 id="p-next-h" hidden>AFTER THE FREE TASTER</h2>
+    <ul class="chat" id="p-next" hidden></ul>
+    <p class="note">Lots of runs before finishing is normal and healthy: it means your child is experimenting. These levels are a guide to how much help was needed. They are not a GCSE grade or a prediction of one. Progress is saved to your child's account, so it follows them to any computer they log in on.</p>
+    <div class="actions no-print">
+      <button class="btn ghost" id="print">PRINT REPORT</button>
+      <button class="btn ghost" id="copy">COPY SUMMARY</button>
+      <button class="btn ghost" id="wipe" hidden>RESET ALL PROGRESS</button>
+      <span class="kbd" id="wipeconfirm" role="status"></span>
+    </div>
+  </section>
+</main>
+<footer class="wrap foot">
+  <p>World 1 of Code Quarry is a free taster, with no ads or tracking. A login is needed to play. We store the parent's email address and, for each child, a username, their progress including the code they write in quests, and any school and year group a parent adds. If a parent opts in, a child's generated nickname and points appear on leaderboards that only logged-in players can see. Payments are handled by PayPal, and we never see card or bank details. The Python engine and fonts download from jsDelivr and Google Fonts. Topics follow the GCSE Computer Science specifications (OCR J277 and AQA 8525), but the game isn't endorsed by either exam board.</p>
+</footer>
+<dialog id="dlg" aria-labelledby="dlg-title"><div class="fall" id="dlg-fall" aria-hidden="true"></div><h2 id="dlg-title"></h2><div id="dlg-body"></div><div class="actions" id="dlg-actions"></div></dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.100.0/dist/umd/supabase.js"></script>
+<script>
+(function(){
+/*TEST-EXPORT-START*/
+const XP_PER = 50, BOSS_XP = 150, XP_LEVEL = 150;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const lines = out => out.split('\n').map(s => s.trim()).filter(Boolean);
+const bare = code => code.split('\n').map(l => l.replace(/#.*$/, '')).join('\n');   // code without comments
+const has = (code, re) => re.test(bare(code));
+const num = v => new RegExp('(^|[^\\d.-])' + String(v).replace('.', '\\.') + '(?!\\d)', 'm');             // matches the number v, not part of a longer one
+const ok = (msg) => ({ok:true, msg});
+const no = (msg) => ({ok:false, msg});
+
+/* Worlds are NOT in this page. They download after login, and only the ones the account may play (see SETUP.md). */
+let WORLDS=[], QUESTS=[];
+function setWorlds(sources){WORLDS=sources.map(src=>eval('('+src+')'));QUESTS=WORLDS.flatMap(w=>w.quests);}
+
+/* ---------- Skills for the parent view. Every quest belongs to exactly one skill. ---------- */
+const SKILLS = [
+{ name:'Output and sequence', plain:'Making the computer show text, and running instructions in order from top to bottom.', quests:['q1','q2'],
+  ask:'Ask: "If I swap two lines in your program, what changes?" A good answer: the order they run in changes.' },
+{ name:'Variables and data types', plain:'Storing values under a name, and knowing the difference between text and numbers.', quests:['q3','q6'],
+  ask:'Ask: "What is a variable, and why does "10" behave differently from 10?" A good answer: one is text and the other is a number you can do maths with.' },
+{ name:'Arithmetic, DIV and MOD', plain:'Doing maths in code, including whole-number division and remainders, which appear in most GCSE papers.', quests:['q4','q5'],
+  ask:'Ask: "How many full boxes of 6 can you fill from 20 eggs, and how would Python work that out?" A good answer uses // for the boxes and % for the 2 left over.' },
+{ name:'Input and casting', plain:'Asking the user a question and converting the answer into a number.', quests:['q7','q8','boss'],
+  ask:'Ask: "Why do we need int() around input()?" A good answer: input always gives back text, and you can\'t do maths on text.' },
+{ name:'Comparisons and Booleans', plain:'Asking true-or-false questions about values.', quests:['w2q1','w2q3'],
+  ask:'Ask: "What is the difference between = and ==?" A good answer: = stores a value, and == asks whether two values are equal.' },
+{ name:'Selection (if, elif, else)', plain:'Making a program choose what to do next. This is one of the three core ideas in programming.', quests:['w2q2','w2q4','w2q5'],
+  ask:'Ask them to describe a real choice as if / elif / else, such as what to wear for the weather. A good answer has one route for each case.' },
+{ name:'Boolean operators and nested choices', plain:'Combining conditions with and, or and not, and putting one decision inside another.', quests:['w2q6','w2q7','w2q8','w2q9','w2boss'],
+  ask:'Ask: "When is \'tired and hungry\' true? When is \'tired or hungry\' true?" A good answer: and needs both, or needs at least one.' },
+{ name:'For loops', plain:'Repeating instructions a set number of times, which GCSE calls iteration.', quests:['w3q1','w3q2','w3q3'],
+  ask:'Ask: "What numbers does range(1, 4) give?" A good answer: 1, 2 and 3, because it stops before the last number.' },
+{ name:'Totals and counters', plain:'Adding up or counting things inside a loop, a pattern used in almost every exam program.', quests:['w3q4','w3q5'],
+  ask:'Ask: "Why does the total have to start at 0 outside the loop?" A good answer: inside the loop, it would be wiped on every repeat.' },
+{ name:'While loops and validation', plain:'Repeating until something changes, and rejecting bad input until it is right.', quests:['w3q6','w3q7','w3q8'],
+  ask:'Ask: "What makes a while loop run forever?" A good answer: nothing inside it ever makes the condition false.' },
+{ name:'Random numbers and small games', plain:'Using random numbers and combining loops with decisions to build a working game.', quests:['w3q9','w3boss'],
+  ask:'Ask them to play you their ore-guessing game, then explain how it knows when to stop.' },
+{ name:'Lists', plain:'Storing many values under one name, and adding, removing and looking them up. GCSE also calls these arrays.', quests:['w4q1','w4q2','w4q3','w4q4','w4q5','w4q6','w4q7'],
+  ask:'Ask: "In a list of three things, why is the last one at position 2?" A good answer: counting starts at 0.' },
+{ name:'Working with strings', plain:'Changing text to capitals and cutting out parts of it, known as slicing.', quests:['w4q8','w4q9'],
+  ask:'Ask: "What would "quarry"[0:3] give?" A good answer: "qua", the first three letters.' },
+{ name:'Combining ideas into a menu program', plain:'Building a longer program that keeps running until the user chooses to quit.', quests:['w4boss'],
+  ask:'Ask them to show you the inventory manager and try typing something it doesn\'t expect.' },
+{ name:'Procedures and parameters', plain:'Packaging code under a name so it can be reused, and passing values into it.', quests:['w5q1','w5q2','w5q3'],
+  ask:'Ask: "Why write a subroutine rather than copy the same lines again?" A good answer: you only have to write it, or fix it, once.' },
+{ name:'Functions and return values', plain:'Subroutines that calculate something and hand the result back to the rest of the program.', quests:['w5q4','w5q5','w5q7','w5q8','w5boss'],
+  ask:'Ask: "What is the difference between print and return?" A good answer: print shows a value to the user, and return gives it back to the code.' },
+{ name:'Local and global variables', plain:'Knowing which parts of a program can see which variables.', quests:['w5q6'],
+  ask:'Ask: "If you make a variable inside a subroutine, can the rest of the program use it?" A good answer: no, it is local unless you return it.' },
+{ name:'2D lists', plain:'Storing a table of data as a list of lists.', quests:['w6q1','w6q2'],
+  ask:'Ask: "How would you store a class register with names and scores?" A good answer: a list containing one small list per student.' },
+{ name:'File handling', plain:'Reading from and writing to text files.', quests:['w6q3','w6q4'],
+  ask:'Ask: "Why do programs save to files at all?" A good answer: variables vanish when a program ends, and files stay.' },
+{ name:'Searching', plain:'The linear and binary search algorithms, which are named on the GCSE specification.', quests:['w6q5','w6q6'],
+  ask:'Ask them to find a word in a dictionary using binary search and say why it needs sorted data.' },
+{ name:'Sorting and trace tables', plain:'The bubble sort algorithm, and following a program by hand, which GCSE papers test directly.', quests:['w6q7','w6q8','w6boss'],
+  ask:'Ask them to bubble sort five playing cards in front of you, describing each swap.' },
+{ name:'Exam-style programming', plain:'Writing whole programs alone against the clock, with no hints, as in the exam.', quests:['w7q1','w7q2','w7q3','w7q4','w7q5','w7q6','w7q7','w7boss'],
+  ask:'Ask how the timing felt, and which question they would want to try again.' }
+];
+
+/* ---------- Friendly errors ---------- */
+function friendly(e, code, pre){
+  const name=e.tp$name||'Error'; let msg=''; try{msg=e.args&&e.args.v[0]?e.args.v[0].v:String(e);}catch(x){msg=String(e);}
+  const ln=(e.traceback||[]).map(t=>t.lineno-(pre||0)).find(n=>n>0)||null, at=ln?` (line ${ln})`:'';
+  const src=(code||'').split('\n'), raw=ln?(src[ln-1]||''):'', line=raw.trim();
+  let prevIdx=ln?ln-2:-1; while(prevIdx>=0&&!src[prevIdx].trim()) prevIdx--;
+  const prevRaw=prevIdx>=0?src[prevIdx]:'', prev=prevRaw.replace(/#.*$/,'').trim();
+  const indent=s=>s.length-s.trimStart().length;
+  let m;
+  if(name==='NameError'&&(m=/name '(\w+)'/.exec(msg))){const w=m[1];
+    const sug={prnt:'print',pirnt:'print',Print:'print',imput:'input',Input:'input',Int:'int',Str:'str',true:'True',false:'False',lenght:'len',Len:'len',rang:'range',Range:'range'}[w];
+    if(sug) return `Python doesn't recognise <code>${esc(w)}</code>${at}. Did you mean <code>${sug}</code>?`;
+    if(new RegExp('^\\s+'+w+'\\s*=','m').test(code||'')) return `<code>${esc(w)}</code> doesn't exist here${at}. If you created it inside a subroutine, it is a <b>local variable</b>, so only that subroutine can see it. Use <code>return</code> to send the value back.`;
+    return `Python doesn't recognise <code>${esc(w)}</code>${at}. Check the spelling, and make sure you created it before using it. Text you want to show needs quotes.`;}
+  if(name==='SyntaxError'||name==='TokenError'||name==='IndentationError'){
+    if(/unindent/.test(msg)) return `The spaces at the start of this line don't line up with the lines above${at}. Lines in the same block need exactly the same number of spaces.`;
+    if(/^(If|Elif|Else|For|While|Def|Print)\b/.test(line)) return `Python keywords are all lowercase${at}. Write <code>${esc(line.split(/\W/)[0].toLowerCase())}</code> with a small first letter.`;
+    if(/^(if|elif|while)\b/.test(line)&&/[^=!<>]=[^=]/.test(line)) return `This line uses one <code>=</code> where it needs two${at}. <code>=</code> stores a value, and <code>==</code> asks whether two values are equal.`;
+    if(/^(if|elif|else|for|while|def)\b/.test(line)&&!/:\s*(#.*)?$/.test(line)) return `This line needs a colon <code>:</code> at the end${at}.`;
+    if(/:$/.test(prev)&&indent(raw)<=indent(prevRaw)) return `The line after a colon must be indented${at}. Press Tab to put 4 spaces in front of it.`;
+    if(line&&indent(raw)>indent(prevRaw)&&!/:$/.test(prev)) return `This line starts with spaces, but nothing above it needs them${at}. Move it back in line with the others.`;
+    if(((line.match(/"/g)||[]).length%2)||((line.match(/'/g)||[]).length%2)) return `A quote mark on this line has no partner${at}. Text needs a quote at both ends.`;
+    const open=s=>(s.match(/[(\[]/g)||[]).length-(s.match(/[)\]]/g)||[]).length;
+    if(open(line)>0||open(prev)>0) return `A bracket was opened but never closed${open(line)>0?at:` (just above line ${ln})`}. Every <code>(</code> needs a <code>)</code>.`;
+    return `Python couldn't read your code${at}. Check the brackets, quotes, colons and spelling on that line.`;
+  }
+  if(name==='TypeError'&&/not supported between/.test(msg)) return `You're comparing text with a number${at}. <code>input()</code> always gives text, so wrap it in <code>int()</code> first.`;
+  if(name==='TypeError'&&/NoneType/.test(msg)) return `Something here has the value <code>None</code>${at}. That usually means a function didn't <code>return</code> anything.`;
+  if(name==='TypeError'&&/missing \d+ required|takes \d+|positional arg/.test(msg)) return `This call gives a subroutine the wrong number of values${at}. Count the parameters in the <code>def</code> line, then pass one value for each.`;
+  if(name==='TypeError'&&/concatenate|must be str|unsupported operand/.test(msg)) return `You can't join text and a number with <code>+</code>${at}. Turn the number into text with <code>str()</code>, or turn text into a number with <code>int()</code>.`;
+  if(name==='IndexError') return `That position doesn't exist${at}. Counting starts at 0, so a list of 3 items has positions 0, 1 and 2.`;
+  if(name==='ValueError'&&/int\(\)/.test(msg)) return `<code>int()</code> needs a whole number like 12${at}. Something else was typed in.`;
+  if(name==='ValueError'&&/not in list/.test(msg)) return `You tried to remove something that isn't in the list${at}. Check it is there first with <code>in</code>.`;
+  if(name==='AttributeError'&&(m=/'(\w+)' object has no attribute '(\w+)'/.exec(msg))) return `A ${esc(m[1])} doesn't have anything called <code>${esc(m[2])}</code>${at}. Check the spelling after the dot.`;
+  if(name==='UnboundLocalError') return `This subroutine uses a variable before giving it a value${at}. Pass the value in as a parameter instead.`;
+  if(name==='IOError') return `Python couldn't use that file${at}: ${esc(msg)}. Check the file name and the mode (<code>"r"</code> to read, <code>"w"</code> to write).`;
+  if(name==='TimeLimitError') return `Your program kept going and was stopped. A <code>while</code> loop that never ends is the usual cause: check that something inside the loop changes, so the condition eventually becomes false.`;
+  if(name==='ZeroDivisionError') return `You can't divide by zero${at}.`;
+  return `${esc(name)}${at}: ${esc(msg)}`;
+}
+const plain = html => html.replace(/<[^>]+>/g,'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&amp;/g,'&');
+
+/* ---------- Simulated files. Skulpt has no real files, so open() is replaced for quests that set `files`. ---------- */
+const FILE_LIB = `class _QFile:
+    def __init__(self, name, mode):
+        self.name = name
+        self.mode = mode[0]
+        self.rest = []
+        self.buf = ""
+        if self.mode == "r":
+            if name not in _qfiles:
+                raise IOError("there is no file called " + name)
+            text = _qfiles[name]
+            while text != "":
+                at = text.find(chr(10))
+                if at == -1:
+                    at = len(text) - 1
+                self.rest.append(text[0:at + 1])
+                text = text[at + 1:]
+        elif self.mode == "w":
+            _qfiles[name] = ""
+    def write(self, text):
+        if self.mode == "r":
+            raise IOError("this file was opened for reading, so you can't write to it")
+        self.buf = self.buf + text
+    def read(self):
+        text = "".join(self.rest)
+        self.rest = []
+        return text
+    def readline(self):
+        if len(self.rest) == 0:
+            return ""
+        return self.rest.pop(0)
+    def readlines(self):
+        all_lines = self.rest
+        self.rest = []
+        return all_lines
+    def __iter__(self):
+        return iter(self.readlines())
+    def close(self):
+        if self.mode != "r":
+            _qfiles[self.name] = _qfiles.get(self.name, "") + self.buf
+            self.buf = ""
+    def __enter__(self):
+        return self
+    def __exit__(self, *args):
+        self.close()
+        return False
+def open(name, mode="r"):
+    return _QFile(name, mode)
+`;
+function prelude(q, opt){
+  let p='';
+  if(q.files) p+=FILE_LIB+'_qfiles = '+JSON.stringify(q.files)+'\n';
+  if(opt&&opt.rig!=null) p+='import random\nrandom.randint = lambda a, b: '+opt.rig+'\n';
+  return p;
+}
+const countLines = s => s ? s.split('\n').length-1 : 0;
+
+/* ---------- Running Python ---------- */
+function pyRun(src, o){
+  Sk.configure({
+    output:o.onOut,
+    read:x=>{if(!Sk.builtinFiles||!Sk.builtinFiles.files[x]) throw "File not found: '"+x+"'"; return Sk.builtinFiles.files[x];},
+    inputfun:o.getInput, inputfunTakesPrompt:true, __future__:Sk.python3, execLimit:o.limit, yieldLimit:100
+  });
+  return Sk.misceval.asyncToPromise(()=>Sk.importMainWithBody('<stdin>',false,src,true));
+}
+/* A hidden test run with scripted answers. `printed` leaves out prompts and typed answers. */
+async function probeRun(q, code, inputs, opt){
+  opt=opt||{};
+  const pre=prelude(q,opt); let printed='', queue=[...(inputs||[])], used=[], ranOut=false, error=null;
+  try{
+    await pyRun(pre+code+(opt.append?'\n'+opt.append+'\n':''),{limit:2500,
+      onOut:t=>{if(printed.length<50000)printed+=t;},
+      getInput:()=>{if(!queue.length){ranOut=true;return Promise.reject(new Error('out of answers'));}const v=queue.shift();used.push(v);return Promise.resolve(v);}});
+  }catch(e){error=e;}
+  return {printed,used,ranOut,error,pre:countLines(pre)};
+}
+function caseFail(k, r, code){
+  const by=k.append?`When I tested it with ${k.append}`:(k.in&&k.in.length?`When I tested it by typing ${k.in.join(', ')}`:'When I tested it');
+  if(r.ranOut) return by+', it kept asking for more when it should have finished.';
+  if(r.error) return by+', it stopped with a problem. '+plain(friendly(r.error,code,r.pre));
+  const said=r.printed.trim().replace(/\s*\n\s*/g,' / ').slice(0,140);
+  const showed=said?`It printed: ${said}`:'It printed nothing.';
+  const all=x=>x==null?[]:(Array.isArray(x)?x:[x]);
+  if(all(k.has).some(re=>!re.test(r.printed))||all(k.not).some(re=>re.test(r.printed))) return `${by}, I expected ${k.want}. ${showed}`;
+  if(k.test){const m=k.test(r.printed,r.used); if(m) return `${by}, ${m} ${showed}`;}
+  return null;
+}
+/* check(c) looks at the player's own run. Then `cases` and `probe` try the routes that run didn't cover. */
+async function grade(q, c){
+  const res=q.check(c); if(!res.ok) return res;
+  for(const k of q.cases||[]){const msg=caseFail(k,await probeRun(q,c.code,k.in,k),c.code); if(msg) return no(msg);}
+  if(q.probe){const msg=await q.probe((inputs,opt)=>probeRun(q,c.code,inputs,opt)); if(msg) return no(msg);}
+  return res;
+}
+/*TEST-EXPORT-END*/
+
+/* ---------- State ---------- */
+/* Paste your Supabase project's URL and publishable (anon) key here. Both are safe to publish: the database rules protect the data. Never put the service role key in this file. */
+const CONFIG={url:'YOUR_SUPABASE_URL',key:'YOUR_SUPABASE_PUBLISHABLE_KEY'};
+const CHILD_DOMAIN='children.codequarry.invalid';   // children have no email address. Their username becomes a login that can never receive mail. Must match the manage-child function.
+const KEY='codequarry.v1';
+let db=null, me=null, role=null, viewingChild=null, META=[];
+const dayKey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const today=()=>dayKey(new Date());
+function fresh(){return {xp:0, ores:{coal:0,iron:0,gold:0,diamond:0}, days:[], seconds:0, current:'q1', q:{}, welcomed:false};}
+let S=fresh();
+const cacheKey=()=>KEY+':'+me.id;
+function readJson(k){try{const raw=localStorage.getItem(k);return raw?JSON.parse(raw):null;}catch(e){return null;}}
+/* Only a logged-in child's own game writes progress. It goes to this browser straight away and to the account a few seconds later. */
+function save(){if(role!=='child')return;S.updatedAt=Date.now();try{localStorage.setItem(cacheKey(),JSON.stringify(S));}catch(e){}queuePush();}
+let pushTimer=null, dirty=false, pushWarned=false;
+function queuePush(){dirty=true;if(!pushTimer)pushTimer=setTimeout(pushNow,4000);}
+async function pushNow(){clearTimeout(pushTimer);pushTimer=null;if(!dirty||role!=='child')return;dirty=false;
+  let failed=false;
+  try{const {error}=await db.from('progress').upsert({child_id:me.id,state:S,updated_at:new Date().toISOString()});failed=!!error;}catch(e){failed=true;}
+  if(failed){dirty=true;pushTimer=setTimeout(pushNow,15000);if(!pushWarned){pushWarned=true;toast('Saving to your account failed. Still trying.');}}
+  else pushWarned=false;}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')pushNow();});
+const qs=id=>S.q[id]||(S.q[id]={done:false,runs:0,hints:0,shown:false,code:null,finished:null});
+const idx=id=>QUESTS.findIndex(q=>q.id===id);
+/* The database only hands over the worlds this account may play, so QUESTS is exactly what can be played. META lists every world, for showing what comes later. */
+const fullAccess=()=>WORLDS.length>=META.length;
+const playable=()=>QUESTS;
+const playableWorlds=()=>WORLDS;
+const visibleSkills=()=>SKILLS.filter(k=>k.quests.every(id=>idx(id)>=0));
+const unlocked=i=>i===0||qs(QUESTS[i-1].id).done;
+const worldOf=id=>WORLDS.find(w=>w.quests.some(q=>q.id===id));
+function markDay(){if(!S.days.includes(today()))S.days.push(today());}
+
+function streak(){const set=new Set(S.days);let n=0;const d=new Date();if(!set.has(today())) d.setDate(d.getDate()-1);
+  for(;;){if(set.has(dayKey(d))){n++;d.setDate(d.getDate()-1);}else break;} return n;}
+
+/* ---------- DOM ---------- */
+const $=id=>document.getElementById(id);
+const code=$('code'), con=$('console'), fb=$('feedback');
+let cur=null, viewWorld=null;
+
+function renderStats(){
+  const lvl=Math.floor(S.xp/XP_LEVEL)+1, into=S.xp%XP_LEVEL;
+  $('lvl').textContent='LV '+lvl; $('xpfill').style.width=(into/XP_LEVEL*100)+'%'; $('xptxt').textContent=into+' / '+XP_LEVEL+' XP';
+  const st=streak(); $('streak').textContent=st+' day streak';
+  for(const o of ['coal','iron','gold','diamond']) $('o-'+o).textContent=S.ores[o];
+}
+function renderList(){
+  const wi=WORLDS.indexOf(viewWorld);
+  $('wname').innerHTML=`WORLD ${wi+1}<small>${esc(viewWorld.name)}: ${esc(viewWorld.subtitle)}</small>`;
+  $('qlist').innerHTML=viewWorld.quests.map((q,n)=>{const s=qs(q.id),u=unlocked(idx(q.id));
+    return `<li><button class="qbtn${s.done?' done':''}${q.boss?' boss':''}" data-id="${q.id}" ${u?'':'disabled'} aria-current="${q.id===cur.id}"><span class="st">${s.done?'&#10003;':(q.boss?'!':n+1)}</span><span class="nm">${esc(q.title)}<span class="tg">${s.done?'Complete':(u?esc(q.gcse):'Locked')}</span></span></button></li>`;}).join('');
+  $('worlds').innerHTML=META.map((m,k)=>{const w=WORLDS.find(x=>x.id===m.id);
+    if(!w) return `<button class="wbtn" data-world="${esc(m.id)}" disabled><span>${k+1}. ${esc(m.name)}</span><span class="wst">FULL GAME</span></button>`;
+    const u=unlocked(idx(w.quests[0].id)), d=w.quests.filter(q=>qs(q.id).done).length, all=d===w.quests.length;
+    return `<button class="wbtn${all?' done':''}" data-world="${w.id}" ${u?'':'disabled'} aria-current="${w===viewWorld}"><span>${k+1}. ${esc(w.name)}</span><span class="wst">${all?'DONE':(u?d+'/'+w.quests.length:'LOCKED')}</span></button>`;}).join('');
+}
+function renderQuest(){
+  const s=qs(cur.id), w=worldOf(cur.id), n=w.quests.indexOf(cur)+1, wn=WORLDS.indexOf(w)+1;
+  $('qeyebrow').textContent=cur.exam?(cur.boss?'MOCK EXAM QUESTION':'EXAM QUESTION '+n+' OF '+w.quests.length)+' · '+cur.minutes+' MINUTES':('WORLD '+wn+' · '+(cur.boss?'BOSS LEVEL':'QUEST '+n+' OF '+w.quests.length));
+  $('qtitle').textContent=cur.title;
+  $('qlearn').innerHTML=cur.learn;
+  $('qtask').innerHTML=cur.task;
+  $('qgcse').innerHTML='<span>GCSE</span> '+esc(cur.gcse);
+  code.value=s.code!=null?s.code:cur.starter; updGutter();
+  con.innerHTML='<span class="sys">Press RUN to see what your code does.</span>';
+  $('runstate').textContent='Ready';
+  fb.innerHTML=s.done?doneBox(cur,false):'';
+  hintBtn(); renderTimer();
+}
+function hintBtn(){const s=qs(cur.id);const b=$('hint');
+  if(cur.exam){
+    if(s.shown){b.textContent='ANSWER SHOWN';b.disabled=true;}
+    else if(s.done||(s.examSecs||0)>=cur.minutes*60){b.textContent='SHOW MODEL ANSWER';b.disabled=false;}
+    else {b.textContent='NO HINTS IN THE EXAM';b.disabled=true;}
+    return;
+  }
+  if(s.hints<cur.hints.length){b.textContent='GET A HINT ('+(cur.hints.length-s.hints)+')';b.disabled=false;}
+  else if(!s.shown){b.textContent='SHOW ANSWER';b.disabled=false;}
+  else {b.textContent='ANSWER SHOWN';b.disabled=true;}}
+function updGutter(){const n=code.value.split('\n').length;let t='';for(let k=1;k<=n;k++)t+=k+(k<n?'\n':'');$('gutter').textContent=t;}
+const mmss=sec=>Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
+function renderTimer(){const t=$('etimer');
+  if(!cur.exam){t.hidden=true;return;}
+  const s=qs(cur.id), used=s.examSecs||0, limit=cur.minutes*60;
+  t.hidden=false; t.classList.toggle('over',used>limit);
+  t.textContent=s.done?'FINISHED IN '+mmss(used):(used<=limit?'TIME LEFT '+mmss(limit-used):'OVER TIME +'+mmss(used-limit));
+}
+
+function doneBox(q,isNew){const s=qs(q.id); const nxt=playable()[idx(q.id)+1];
+  const xp=q.boss?BOSS_XP:XP_PER;
+  const nextLabel=nxt&&q.boss?'ENTER WORLD '+(WORLDS.indexOf(worldOf(nxt.id))+1)+' &#9654;':'NEXT QUEST &#9654;';
+  return `<div class="fb good"><div class="h">${isNew?'QUEST COMPLETE!':'ALREADY COMPLETE'}</div>
+  ${isNew?`<div class="reward"><span>+${xp} XP</span><span><i class="ore ${q.ore}"></i> +1 ${q.ore}</span></div>`:''}
+  <p>${isNew?esc(s.lastMsg||''):'You can keep experimenting here. It won\'t change your score.'}</p>
+  <div class="actions" style="margin-top:6px">${nxt?`<button class="btn next" data-go="${nxt.id}">${nextLabel}</button>`:(fullAccess()?`<span>You've finished every quest in Code Quarry.</span>`:`<span>You've finished the free taster.</span><button class="btn next" data-report>SHOW THE PARENT REPORT</button>`)}</div></div>`;}
+
+/* ---------- Dialog ---------- */
+function showDlg(o){
+  const d=$('dlg');
+  $('dlg-title').textContent=o.title; $('dlg-body').innerHTML=o.body;
+  $('dlg-fall').innerHTML=o.party?['coal','iron','gold','diamond'].flatMap((t,a)=>[0,1,2,3].map(b=>`<i class="ore ${t}" style="left:${(a*25+b*6+3)%96}%;animation-delay:${((a*3+b*5)%10)/4}s"></i>`)).join(''):'';
+  const box=$('dlg-actions'); box.innerHTML='';
+  for(const b of o.buttons){const el=document.createElement('button');el.className='btn '+(b.cls||'ghost');el.innerHTML=b.label;el.addEventListener('click',()=>{d.close();if(b.fn)b.fn();});box.appendChild(el);}
+  if(d.showModal&&!d.open) d.showModal();
+}
+function worldComplete(w){
+  const k=WORLDS.indexOf(w), after=META[k+1], nxt=WORLDS[k+1];
+  if(after&&!nxt){
+    showDlg({party:true,title:'FREE TASTER COMPLETE!',
+      body:`<p>${esc(w.win)}</p><p>That's the end of the free taster. The full game carries on with <b>World ${k+2}: ${esc(after.name)}</b>, ${esc(after.subtitle)}.</p><p>Show a parent or carer your report. It shows what you've learned.</p>`,
+      buttons:[{label:'SHOW THE PARENT REPORT',cls:'next',fn:showReport},{label:'STAY HERE'}]});
+    return;
+  }
+  showDlg({party:true,title:nxt?`WORLD ${k+1} COMPLETE!`:'CODE QUARRY COMPLETE!',
+    body:`<p>${esc(w.win)}</p>`+(nxt?`<p>Next up is <b>World ${k+2}: ${esc(nxt.name)}</b>, ${esc(nxt.subtitle)}.</p>`:`<p>You went from your first <code>print()</code> to a full mock exam question. Show someone what you built.</p>`),
+    buttons:nxt?[{label:'ENTER WORLD '+(k+2)+' &#9654;',cls:'next',fn:()=>go(nxt.quests[0].id)},{label:'STAY HERE'}]:[{label:'CLOSE',cls:'next'}]});
+}
+
+/* ---------- Run ---------- */
+const OUT_CAP=20000;
+let ctl=null;
+let scrollQueued=false;
+function out(text,cls){
+  const last=con.lastChild;
+  if(last&&last.tagName==='SPAN'&&last.className===(cls||'')&&last.firstChild) last.firstChild.appendData(text);
+  else {const sp=document.createElement('span');if(cls)sp.className=cls;sp.textContent=text;con.appendChild(sp);}
+  if(!scrollQueued){scrollQueued=true;setTimeout(()=>{scrollQueued=false;con.scrollTop=con.scrollHeight;},50);}
+}
+function askInput(prompt,me){return new Promise((res,rej)=>{
+  if(prompt) out(prompt);
+  const row=document.createElement('div');row.className='inrow';
+  row.innerHTML='<input id="stdin" aria-label="Type your answer and press Enter" autocomplete="off"><button class="btn ghost" style="padding:6px 10px;font-size:9px">ENTER</button>';
+  con.appendChild(row);const inp=row.querySelector('input');inp.focus();con.scrollTop=con.scrollHeight;
+  $('runstate').textContent='Waiting for you to type…';
+  me.rejectInput=e=>{row.remove();rej(e);};
+  const done=()=>{const v=inp.value;me.rejectInput=null;row.remove();out(v+'\n','in');$('runstate').textContent='Running…';Sk.execStart=Date.now();code.focus();res(v);};
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();done();}});
+  row.querySelector('button').addEventListener('click',done);
+});}
+function stopRun(){if(!ctl)return;ctl.stopped=true;Sk.execStart=1;if(ctl.rejectInput){const r=ctl.rejectInput;ctl.rejectInput=null;r(new Error('stopped'));}}
+function setRunBtn(on){const b=$('run');b.className='btn '+(on?'stop':'run');b.innerHTML=on?'&#9632; STOP':'&#9654; RUN';}
+
+async function run(){
+  if(ctl){stopRun();return;}
+  if(typeof Sk==='undefined'){fb.innerHTML='<div class="fb bad"><div class="h">PYTHON DIDN\'T LOAD</div><p>Check the internet connection and reload the page.</p></div>';return;}
+  const q=cur, s=qs(q.id), src=code.value, pre=prelude(q), me=ctl={stopped:false,abandoned:false,rejectInput:null};
+  setRunBtn(true);
+  s.code=src; s.runs++; activity(); markDay(); save();
+  con.innerHTML=''; fb.innerHTML=''; $('runstate').textContent='Running…';
+  let buf='', printed='', inputs=[], error=null, flooded=false;
+  try{
+    await pyRun(pre+src,{limit:6000,
+      onOut:t=>{if(me.abandoned)return; buf+=t; printed+=t;
+        if(printed.length>OUT_CAP){if(!flooded){flooded=true;out('\n… too much output, so the program was stopped …\n','sys');Sk.execStart=1;}return;}
+        out(t);},
+      getInput:p=>askInput(p,me).then(v=>{buf+=(p||'')+v+'\n';inputs.push(v);return v;})});
+  }catch(e){error=e;}
+  const finish=()=>{ctl=null;setRunBtn(false);};
+  if(me.abandoned){finish();return;}
+  if(me.stopped){finish();$('runstate').textContent='Stopped';if(!buf)out('(stopped)','sys');fb.innerHTML='<div class="fb info"><div class="h">STOPPED</div><p>You stopped the program. Press RUN when you\'re ready to try again.</p></div>';save();return;}
+  if(!buf&&!error) out('(no output)','sys');
+  let res;
+  if(error){
+    $('runstate').textContent='Stopped with an error';
+    out('\n'+(error.tp$name||'Error'),'err');
+  } else {
+    $('runstate').textContent='Checking your program…';
+    res=await grade(q,{code:src,out:buf,printed,inputs,error:null});
+    if(me.abandoned){finish();return;}
+    if(me.stopped){finish();$('runstate').textContent='Stopped';return;}
+    $('runstate').textContent='Finished';
+  }
+  finish();
+  const wasDone=s.done;
+  if(res&&res.ok){
+    if(!wasDone){s.done=true;s.finished=new Date().toISOString();s.lastMsg=res.msg;S.xp+=q.boss?BOSS_XP:XP_PER;S.ores[q.ore]++;
+      const nx=playable()[idx(q.id)+1]; if(nx) S.current=nx.id; toast('+'+(q.boss?BOSS_XP:XP_PER)+' XP');}
+    s.lastMsg=res.msg; fb.innerHTML=wasDone?`<div class="fb good"><div class="h">STILL WORKS</div><p>${esc(res.msg)}</p></div>`:doneBox(q,true);
+    if(!wasDone&&q.boss) worldComplete(worldOf(q.id));
+  } else if(error){
+    const broken=q.startsBroken&&!s.done;
+    fb.innerHTML=`<div class="fb bad"><div class="h">${broken?'THERE\'S THE BUG':'PYTHON FOUND A PROBLEM'}</div><p>${friendly(error,src,countLines(pre))}</p>${broken?'<p>That message is your clue. Change the code and press RUN again.</p>':''}</div>`;
+  } else {
+    const tip=(s.runs>=3&&!q.exam&&s.hints<q.hints.length)?'<p style="color:var(--muted)">Stuck? A hint costs nothing.</p>':'';
+    fb.innerHTML=`<div class="fb bad"><div class="h">NOT QUITE YET</div><p>${esc(res.msg)}</p>${tip}</div>`;
+  }
+  save(); renderStats(); renderList(); hintBtn(); renderTimer(); renderParent();
+}
+
+/* ---------- Hints ---------- */
+$('hint').addEventListener('click',()=>{const s=qs(cur.id);activity();
+  if(cur.exam){if(!s.shown){s.shown=true;fb.innerHTML=`<div class="fb info"><div class="h">MODEL ANSWER</div><p>Read it, then close it and try writing your own version from memory.</p><pre>${esc(cur.solution)}</pre></div>`;}}
+  else if(s.hints<cur.hints.length){s.hints++;
+    fb.innerHTML=`<div class="fb info"><div class="h">HINT ${s.hints} OF ${cur.hints.length}</div>${cur.hints.slice(0,s.hints).map(h=>`<p>${esc(h)}</p>`).join('')}</div>`;}
+  else if(!s.shown){
+    if(s.runs<2){fb.innerHTML=`<div class="fb info"><div class="h">TRY TWICE FIRST</div><p>Have at least two goes with RUN before the answer unlocks. Mistakes are how this sticks.</p></div>`;return;}
+    s.shown=true;
+    fb.innerHTML=`<div class="fb info"><div class="h">THE ANSWER</div><p>Read it, then type it yourself rather than copying. Typing it is what makes it stick.</p><pre>${esc(cur.solution)}</pre></div>`;}
+  save();hintBtn();renderParent();});
+
+$('reset').addEventListener('click',()=>{code.value=cur.starter;qs(cur.id).code=cur.starter;save();updGutter();code.focus();});
+$('run').addEventListener('click',run);
+document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b){go(b.dataset.go);}if(e.target.closest('[data-report]'))showReport();});
+$('qlist').addEventListener('click',e=>{const b=e.target.closest('.qbtn');if(b&&!b.disabled)go(b.dataset.id);});
+$('worlds').addEventListener('click',e=>{const b=e.target.closest('.wbtn');if(!b||b.disabled)return;
+  const w=WORLDS.find(x=>x.id===b.dataset.world); if(w===worldOf(cur.id)){viewWorld=w;renderList();return;}
+  const open=w.quests.find(q=>!qs(q.id).done&&unlocked(idx(q.id)))||w.quests[0]; go(open.id);});
+function go(id){
+  if(ctl){ctl.abandoned=true;stopRun();}
+  qs(cur.id).code=code.value;cur=QUESTS[idx(id)];viewWorld=worldOf(id);S.current=id;save();setRunBtn(false);renderList();renderQuest();window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ---------- Editor keys ---------- */
+function insert(text){code.focus();let done=false;try{done=document.execCommand('insertText',false,text);}catch(e){}
+  if(!done)code.setRangeText(text,code.selectionStart,code.selectionEnd,'end');updGutter();qs(cur.id).code=code.value;}
+code.addEventListener('input',()=>{updGutter();qs(cur.id).code=code.value;save();activity();});
+code.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();run();return;}
+  if(e.key==='Tab'&&!e.shiftKey){e.preventDefault();insert('    ');return;}
+  if(e.key==='Enter'){e.preventDefault();const a=code.selectionStart;const line=code.value.slice(0,a).split('\n').pop();let ind=(line.match(/^\s*/)||[''])[0];if(/:\s*(#.*)?$/.test(line))ind+='    ';insert('\n'+ind);return;}
+  if(e.key==='Backspace'&&code.selectionStart===code.selectionEnd){const a=code.selectionStart;const line=code.value.slice(0,a).split('\n').pop();
+    if(line.length>=4&&line.length%4===0&&!line.trim()){e.preventDefault();code.setSelectionRange(a-4,a);let gone=false;try{gone=document.execCommand('delete');}catch(x){}if(!gone)code.setRangeText('',a-4,a,'end');updGutter();qs(cur.id).code=code.value;}}
+});
+
+/* ---------- Tabs ---------- */
+function tab(which){for(const v of ['quests','board','parent']){$('view-'+v).hidden=v!==which;$('tab-'+v).setAttribute('aria-selected',v===which);}if(which==='parent')renderParent();if(which==='board')renderBoard();}
+function showReport(){tab('parent');window.scrollTo({top:0});}
+$('tab-quests').addEventListener('click',()=>tab('quests'));$('tab-parent').addEventListener('click',()=>tab('parent'));$('tab-board').addEventListener('click',()=>tab('board'));
+
+/* ---------- Parent view ---------- */
+const LEVELS=['Not started','Learning','Getting there','Confident'];
+function questScore(id,exam){const s=qs(id);if(!s.done)return null;if(s.shown)return 1;if(exam)return 3;return s.hints>=2?1.5:(s.hints===1?2.5:3);}
+function skillLevel(k){
+  const scores=k.quests.map(id=>questScore(id,QUESTS[idx(id)].exam)).filter(v=>v!=null);
+  const touched=k.quests.some(id=>qs(id).runs>0);
+  if(!scores.length) return touched?1:0;
+  const avg=scores.reduce((a,b)=>a+b,0)/scores.length;
+  if(avg<1.75) return 1;
+  return scores.length===k.quests.length&&avg>=2.25?3:2;
+}
+const joinList=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' and '+a[a.length-1];
+function fmtTime(sec){const m=Math.round(sec/60);return m<60?m+'m':Math.floor(m/60)+'h '+(m%60)+'m';}
+function flagged(){
+  const seen=[];
+  for(const k of visibleSkills())for(const id of k.quests){const q=QUESTS[idx(id)],s=qs(id);
+    let why='';
+    if(s.shown) why=q.exam?'They looked at the model answer for this question.':'They needed to see the answer for this quest.';
+    else if(!s.done&&s.runs>=8) why=`They have run this ${s.runs} times without finishing it yet.`;
+    else if(q.exam&&s.done&&(s.examSecs||0)>q.minutes*60) why=`They finished, but it took ${mmss(s.examSecs)} against a limit of ${q.minutes} minutes.`;
+    if(why) seen.push({q,k,why});
+  }
+  return seen;
+}
+function summaryParts(){
+  const taster=!fullAccess(), pool=playable(), done=pool.filter(q=>qs(q.id).done).length, curWorld=worldOf(S.current)||WORLDS[0], wn=WORLDS.indexOf(curWorld)+1, skills=visibleSkills();
+  const conf=skills.filter(k=>skillLevel(k)===3).map(k=>k.name), lvls=skills.filter(k=>skillLevel(k)===1&&k.quests.some(id=>qs(id).done)).map(k=>k.name);
+  if(!S.days.length&&!done) return {headline:'Nothing played yet',lines:['No quests have been tried yet. Once your child logs in and starts playing, this page will show which GCSE skills are secure and which need practice.']};
+  const lines=[`Your child has finished ${done} of ${taster?`the ${pool.length} quests in the free taster (World ${wn}: ${curWorld.name})`:`${QUESTS.length} quests and has reached World ${wn}: ${curWorld.name}`}. They have practised on ${S.days.length} day${S.days.length===1?'':'s'}, for about ${fmtTime(S.seconds)} in total.`];
+  lines.push(conf.length?`Confident with: ${joinList(conf)}.`:'No skill is rated Confident yet. That is normal early on, because a skill needs all of its quests finished first.');
+  if(lvls.length) lines.push(`Worth more practice: ${joinList(lvls)}.`);
+  const nextQ=QUESTS.find((q,i)=>!qs(q.id).done&&unlocked(i));
+  lines.push(nextQ?`Next up: "${nextQ.title}" (${nextQ.gcse}).`:(taster?'Every quest in the free taster is finished, including the boss level.':'Every quest is finished, including the mock exam question.'));
+  return {headline:taster?`Free taster: ${done} of ${pool.length} quests finished`:`World ${wn} of ${WORLDS.length}: ${done} quests finished`,lines};
+}
+function renderParent(){
+  const pool=playable(), done=pool.filter(q=>qs(q.id).done).length, examQ=pool.filter(q=>q.exam);
+  $('p-done').textContent=done+'/'+pool.length;$('p-time').textContent=fmtTime(S.seconds);$('p-streak').textContent=streak();$('p-days').textContent=S.days.length;
+  $('p-exam').textContent=examQ.filter(q=>qs(q.id).done).length+'/'+examQ.length;$('p-exam').parentElement.hidden=!examQ.length;
+  const sum=summaryParts();
+  $('p-summary').innerHTML=`<h1>${esc(sum.headline)}</h1>`+sum.lines.map(l=>`<p>${esc(l)}</p>`).join('');
+  $('p-skills').innerHTML=visibleSkills().map(k=>{const l=skillLevel(k),d=k.quests.filter(id=>qs(id).done).length;
+    return `<tr><td><b>${esc(k.name)}</b></td><td>${esc(k.plain)}</td><td><span class="lvl"><span class="meter l${l}" aria-hidden="true"><i></i><i></i><i></i></span>${LEVELS[l]}</span></td><td>${d}/${k.quests.length}</td></tr>`;}).join('');
+  const fl=flagged();
+  $('p-chat').innerHTML=fl.length?fl.map(f=>`<li><b>${esc(f.q.title)} (${esc(f.k.name)})</b><p>${esc(f.why)}</p><p>${esc(f.k.ask)}</p></li>`).join(''):'<li>Nothing to flag at the moment. Quests that needed the answer, or that are causing a long struggle, will appear here with a question you can ask.</li>';
+  $('p-rows').innerHTML=playableWorlds().map((w,k)=>`<tr class="wrow"><td colspan="6">WORLD ${k+1}: ${esc(w.name).toUpperCase()}</td></tr>`+w.quests.map((q,n)=>{const s=qs(q.id);const st=s.done?'<span class="pill d">Done</span>':(s.runs?'<span class="pill s">Started</span>':'<span class="pill n">Not started</span>');
+    const ex=q.exam&&(s.examSecs||0)>0?` · ${mmss(s.examSecs)} of ${q.minutes}:00`:'';
+    return `<tr><td>${q.boss?'':(n+1)+'. '}${esc(q.title)}<br><small>${esc(q.gcse)}${ex}</small></td><td>${st}</td><td>${s.runs}</td><td>${q.exam?'None allowed':s.hints+'/'+q.hints.length}</td><td>${s.shown?'Yes':'No'}</td><td>${s.finished?new Date(s.finished).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'–'}</td></tr>`;}).join('')).join('');
+  const later=META.filter(m=>!WORLDS.some(w=>w.id===m.id));
+  $('p-next-h').hidden=$('p-next').hidden=!later.length;
+  $('p-next').innerHTML=later.map(w=>`<li><b>World ${META.indexOf(w)+1}: ${esc(w.name)}</b><p>${esc(w.subtitle[0].toUpperCase()+w.subtitle.slice(1))}. ${w.quest_count} quests.</p></li>`).join('');
+}
+function reportText(){
+  const sum=summaryParts();
+  const rows=visibleSkills().filter(k=>skillLevel(k)>0).map(k=>`- ${k.name}: ${LEVELS[skillLevel(k)]} (${k.quests.filter(id=>qs(id).done).length}/${k.quests.length} quests)`);
+  return ['Code Quarry progress report',sum.headline,'',...sum.lines,...(rows.length?['','Skills:',...rows]:[]),'','These levels show how much help was needed. They are not a GCSE grade.'].join('\n');
+}
+$('print').addEventListener('click',()=>window.print());
+$('copy').addEventListener('click',async()=>{const t=reportText();let done=false;
+  try{await navigator.clipboard.writeText(t);done=true;}catch(e){
+    const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{done=document.execCommand('copy');}catch(x){}a.remove();}
+  $('wipeconfirm').textContent=done?'Summary copied.':'Your browser blocked copying. Use Print report instead.';setTimeout(()=>{$('wipeconfirm').textContent='';},4000);});
+let wipeArm=false;
+$('wipe').addEventListener('click',async()=>{if(!wipeArm){wipeArm=true;$('wipeconfirm').textContent='Press again to erase everything.';setTimeout(()=>{wipeArm=false;$('wipeconfirm').textContent='';},4000);return;}
+  wipeArm=false; if(role!=='parent'||!viewingChild) return;
+  const blank=Object.assign(fresh(),{welcomed:true,updatedAt:Date.now()});
+  const {error}=await db.from('progress').update({state:blank,updated_at:new Date().toISOString()}).eq('child_id',viewingChild.id);
+  if(error){$('wipeconfirm').textContent='That didn\'t work. Please try again.';return;}
+  S=blank;$('wipeconfirm').textContent='Progress erased.';renderParent();});
+
+/* ---------- Time tracking (only while active) ---------- */
+let lastAct=Date.now();function activity(){lastAct=Date.now();}
+document.addEventListener('keydown',activity);document.addEventListener('pointerdown',activity);
+setInterval(()=>{if(role==='child'&&document.visibilityState==='visible'&&Date.now()-lastAct<120000){S.seconds+=15;save();}},15000);
+setInterval(()=>{if(role!=='child'||!cur||!cur.exam||$('view-quests').hidden||document.visibilityState!=='visible')return;const s=qs(cur.id);if(s.done)return;
+  const before=s.examSecs||0;s.examSecs=before+1;if(s.examSecs%5===0)save();renderTimer();if(s.examSecs===cur.minutes*60)hintBtn();},1000);
+
+function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),1800);}
+function renderAll(){renderStats();renderList();renderQuest();renderParent();}
+
+/* ---------- Views ---------- */
+function showView(id){for(const v of ['view-loading','view-auth','view-family','view-quests','view-parent','view-board'])$(v).hidden=v!==id;}
+function loadingMsg(t,isErr){showView('view-loading');$('loading-msg').textContent=t;$('loading-msg').classList.toggle('err',!!isErr);}
+
+/* ---------- Login page ---------- */
+const AUTH={
+  player:{title:'PLAYER LOG IN',submit:'LOG IN',fields:[['a-user','Username','text','username'],['a-pass','Password','password','current-password']],
+    links:[['parent','I\'m a parent']],note:'Forgotten your password? Ask your parent or carer to set a new one.'},
+  parent:{title:'PARENT LOG IN',submit:'LOG IN',fields:[['a-email','Email','email','email'],['a-pass','Password','password','current-password']],
+    links:[['register','New here? Create a parent account'],['forgot','Forgotten your password?'],['player','I\'m a player']]},
+  register:{title:'CREATE A PARENT ACCOUNT',submit:'CREATE ACCOUNT',fields:[['a-email','Email','email','email'],['a-pass','Password (at least 8 characters)','password','new-password']],consent:true,
+    links:[['parent','Already registered? Log in']],note:'We store your email address and, for each child, a username, their progress including the code they write in quests, and any school and year group you add. Leaderboards are off unless you turn them on for a child. You can delete all of it at any time from your family page.'},
+  forgot:{title:'RESET YOUR PASSWORD',submit:'EMAIL ME A LINK',fields:[['a-email','Email','email','email']],links:[['parent','Back to log in']]},
+  newpass:{title:'CHOOSE A NEW PASSWORD',submit:'SAVE PASSWORD',fields:[['a-pass','New password (at least 8 characters)','password','new-password']],links:[]},
+};
+let authMode='player';
+function showAuth(mode,msg,good){
+  authMode=mode;const m=AUTH[mode];showView('view-auth');
+  $('a-form').innerHTML='<h1>'+m.title+'</h1>'
+    +m.fields.map(f=>'<label class="field">'+f[1]+'<input id="'+f[0]+'" type="'+f[2]+'" autocomplete="'+f[3]+'" autocapitalize="off" spellcheck="false" required></label>').join('')
+    +(m.note?'<p class="msg">'+m.note+'</p>':'')
+    +(m.consent?'<label class="check"><input type="checkbox" id="a-consent"><span>I am the parent or guardian of the children I add, and I agree to their data being stored as described above.</span></label>':'')
+    +'<div><button class="btn next" type="submit" id="a-go">'+m.submit+'</button></div>'
+    +'<p class="msg'+(msg?(good?' good':' err'):'')+'" id="a-msg" role="status">'+(msg?esc(msg):'')+'</p>'
+    +m.links.map(l=>'<button class="linkbtn" type="button" data-auth="'+l[0]+'">'+l[1]+'</button>').join('');
+  const first=$('a-form').querySelector('input');if(first)first.focus();
+}
+$('a-form').addEventListener('click',e=>{const b=e.target.closest('[data-auth]');if(b)showAuth(b.dataset.auth);});
+function authErr(error){const t=String(error&&error.message||'').toLowerCase();
+  if(t.includes('email not confirmed')) return 'Please confirm your email first. Check your inbox for our link.';
+  if(t.includes('invalid login')) return authMode==='player'?'That username or password isn\'t right. Check them, or ask your parent or carer to set a new password.':'That email or password isn\'t right.';
+  if(t.includes('rate limit')||t.includes('too many')) return 'Too many tries. Please wait a few minutes and try again.';
+  if(t.includes('password')) return 'Please choose a stronger password, with at least 8 characters.';
+  return 'That didn\'t work. Please check your connection and try again.';}
+$('a-form').addEventListener('submit',async e=>{e.preventDefault();
+  const val=id=>{const el=$(id);return el?el.value.trim():'';}, msg=(t,cls)=>{const a=$('a-msg');a.textContent=t;a.className='msg '+(cls||'err');};
+  const pass=$('a-pass')?$('a-pass').value:'', go=$('a-go');
+  if(authMode==='player'&&(!val('a-user')||!pass)) return msg('Type your username and password.');
+  if(['parent','register','forgot'].includes(authMode)&&!/^\S+@\S+\.\S+$/.test(val('a-email'))) return msg('Type your email address.');
+  if(authMode==='parent'&&!pass) return msg('Type your password.');
+  if(['register','newpass'].includes(authMode)&&pass.length<8) return msg('Your password needs at least 8 characters.');
+  if(authMode==='register'&&!$('a-consent').checked) return msg('Please tick the box to confirm you are the parent or guardian.');
+  go.disabled=true;
+  const back=location.origin+location.pathname;
+  try{
+    if(authMode==='player'||authMode==='parent'){
+      const email=authMode==='player'?val('a-user').toLowerCase()+'@'+CHILD_DOMAIN:val('a-email');
+      const {data,error}=await db.auth.signInWithPassword({email,password:pass});
+      if(error) throw error;
+      await enter(data.user);return;
+    }
+    if(authMode==='register'){
+      const {data,error}=await db.auth.signUp({email:val('a-email'),password:pass,options:{emailRedirectTo:back}});
+      if(error) throw error;
+      if(data.session){await enter(data.user);return;}
+      showAuth('parent','Nearly there. We\'ve emailed you a link. Click it to confirm your account, then log in.',true);return;
+    }
+    if(authMode==='forgot'){
+      const {error}=await db.auth.resetPasswordForEmail(val('a-email'),{redirectTo:back});
+      if(error) throw error;
+      showAuth('parent','If that email has an account, a reset link is on its way.',true);return;
+    }
+    if(authMode==='newpass'){
+      const {data,error}=await db.auth.updateUser({password:pass});
+      if(error) throw error;
+      history.replaceState(null,'',location.pathname);
+      await enter(data.user);return;
+    }
+  }catch(err){msg(authErr(err));}
+  if($('a-go'))$('a-go').disabled=false;
+});
+$('logout').addEventListener('click',async()=>{
+  if(role==='child'){qs(cur.id).code=code.value;save();await pushNow();if(!dirty){try{localStorage.removeItem(cacheKey());}catch(e){}}}
+  await db.auth.signOut();location.reload();});
+
+/* ---------- After login ---------- */
+async function loadWorlds(){
+  const m=await db.from('worlds').select('id,position,name,subtitle,quest_count,free').order('position');
+  if(m.error) throw m.error;
+  const c=await db.from('world_content').select('world_id,source');
+  if(c.error) throw c.error;
+  META=m.data;
+  const byId=Object.fromEntries(c.data.map(r=>[r.world_id,r.source]));
+  setWorlds(META.filter(w=>byId[w.id]).map(w=>byId[w.id]));
+  if(!QUESTS.length) throw new Error('No worlds available');
+}
+async function enter(user){
+  me=user;loadingMsg('Opening the quarry...');
+  try{
+    const kid=await db.from('children').select(KID_COLS).eq('id',user.id).maybeSingle();
+    if(kid.error) throw kid.error;
+    role=kid.data?'child':'parent';
+    await loadWorlds();
+    $('whochip').hidden=false;
+    if(role==='child'){myKid=kid.data;$('who').textContent=kid.data.username;await startGame(kid.data);}
+    else {$('who').textContent=user.email;const note=await finishPayPalReturn();if(note.synced)await loadWorlds();await showFamily();if(note.msg)planMsg(note.msg,note.good);}
+  }catch(e){loadingMsg('We couldn\'t open your account. Please check your connection and reload the page.',true);}
+}
+async function startGame(kid){
+  const r=await db.from('progress').select('state').eq('child_id',me.id).maybeSingle();
+  if(r.error) throw r.error;
+  const server=r.data&&r.data.state, local=readJson(cacheKey());
+  const best=server&&local?((local.updatedAt||0)>(server.updatedAt||0)?local:server):(server||local);
+  S=Object.assign(fresh(),best||{});
+  placeCurrent();
+  $('tabs').hidden=false;$('stats').hidden=false;
+  showView('view-quests');renderAll();
+  if(local&&local===best&&local!==server) queuePush();
+  const old=!best&&readJson(KEY);
+  if(old&&Object.values(old.q||{}).some(q=>q.runs>0)){
+    showDlg({title:'PROGRESS FOUND',body:'<p>This browser has progress saved from before logins. Is it yours, <b>'+esc(kid.username)+'</b>?</p>',
+      buttons:[{label:'YES, ADD IT',cls:'next',fn:()=>{S=Object.assign(fresh(),old,{welcomed:true});placeCurrent();save();try{localStorage.removeItem(KEY);}catch(e){}renderAll();}},
+               {label:'NO, START FRESH',fn:welcome}]});
+  } else if(!S.welcomed) welcome();
+}
+function placeCurrent(){
+  let i=idx(S.current);
+  if(i<0){const open=QUESTS.findIndex(q=>!qs(q.id).done);i=open<0?QUESTS.length-1:open;}
+  cur=QUESTS[i];viewWorld=worldOf(cur.id);S.current=cur.id;
+}
+function welcome(){
+  showDlg({title:'WELCOME TO CODE QUARRY',
+    body:'<p>Learn real Python by mining. Start with World 1: '+WORLDS[0].quests.length+' quests that take you from your very first line of code to a working crafting calculator. You write real code, press RUN, and the game checks it.</p><p>There\'s nothing to install. Your progress saves to your account, and the parent report fills in as you play.</p>',
+    buttons:[{label:'START MINING &#9654;',cls:'next',fn:()=>{S.welcomed=true;save();code.focus();}}]});
+}
+
+/* ---------- Family page (parents) ---------- */
+async function callChild(body){return callFn('manage-child',body);}
+async function callFn(name,body){
+  const {data,error}=await db.functions.invoke(name,{body});
+  if(!error) return data;
+  let text='That didn\'t work. Please try again.';
+  try{const j=await error.context.json();if(j&&j.error)text=j.error;}catch(e){}
+  throw new Error(text);
+}
+const KID_COLS='id,username,nickname,school_urn,year_group,on_leaderboard';
+let myKid=null, SCHOOLS=[], kidsById={};
+/* The school, year and leaderboard fields, used when adding and when editing a child. */
+function yearOptions(urn,chosen){const sch=SCHOOLS.find(x=>x.urn===urn), lo=sch?sch.low_year:1, hi=sch?sch.high_year:13;let h='<option value="">Not set</option>';
+  for(let y=lo;y<=hi;y++)h+='<option value="'+y+'"'+(y===chosen?' selected':'')+'>Year '+y+'</option>';return h;}
+function childFields(p,k){k=k||{};
+  const group=st=>{const list=SCHOOLS.filter(x=>x.stage===st);return list.length?'<optgroup label="'+st+'">'+list.map(x=>'<option value="'+x.urn+'"'+(x.urn===k.school_urn?' selected':'')+'>'+esc(x.name)+'</option>').join('')+'</optgroup>':'';};
+  return '<label class="field">School<select id="'+p+'-school" data-year="'+p+'-year"><option value="">Not listed, or prefer not to say</option>'+group('Primary')+group('Secondary')+group('All-through')+'</select><small>We\'re starting with schools in Slough.</small></label>'
+    +'<label class="field">Year group<select id="'+p+'-year">'+yearOptions(k.school_urn,k.year_group)+'</select></label>'
+    +'<label class="check"><input type="checkbox" id="'+p+'-board"'+(k.on_leaderboard?' checked':'')+'><span>Show on the leaderboards. Other logged-in players see a generated nickname and points, never your child\'s name or username. Families at the same school also see their year group.</span></label>';}
+function readChildFields(p){const urn=$(p+'-school').value, year=$(p+'-year').value;
+  return {school_urn:urn?Number(urn):null,year_group:year?Number(year):null,on_leaderboard:$(p+'-board').checked};}
+document.addEventListener('change',e=>{const y=e.target.dataset&&e.target.dataset.year;if(y&&$(y))$(y).innerHTML=yearOptions(e.target.value?Number(e.target.value):null,null);});
+const describeKid=k=>{const sch=SCHOOLS.find(x=>x.urn===k.school_urn);return [sch?esc(sch.name):'',k.year_group?'Year '+k.year_group:''].filter(Boolean).join(', ');};
+async function showFamily(){
+  viewingChild=null;showView('view-family');
+  if(!SCHOOLS.length){const sc=await db.from('schools').select('urn,name,stage,low_year,high_year').order('name');if(sc.error) throw sc.error;SCHOOLS=sc.data;$('f-extra').innerHTML=childFields('f');}
+  const kids=await db.from('children').select(KID_COLS).eq('parent_id',me.id).order('created_at');
+  if(kids.error) throw kids.error;
+  kidsById=Object.fromEntries(kids.data.map(k=>[k.id,k]));
+  await loadPlan();
+  const prog=await db.from('progress').select('child_id,state');
+  if(prog.error) throw prog.error;
+  const states=Object.fromEntries(prog.data.map(p=>[p.child_id,p.state]));
+  $('f-list').innerHTML=kids.data.length?kids.data.map(k=>{
+    const st=states[k.id]||{q:{}}, n=QUESTS.filter(q=>st.q[q.id]&&st.q[q.id].done).length;
+    const about=describeKid(k);
+    return '<li class="kid"><div><b>'+esc(k.username)+'</b><p>'+n+' of '+QUESTS.length+' quests finished</p>'+(about?'<p>'+about+'</p>':'')+'<p>'+(kids.data.indexOf(k)<activeSeats()?'Full game':'Free taster: World 1 only')+'</p><p>'+(k.on_leaderboard?'On the leaderboards as '+esc(k.nickname):'Not on the leaderboards')+'</p></div><div class="actions">'
+      +'<button class="btn next small" data-report-kid="'+k.id+'" data-name="'+esc(k.username)+'">VIEW REPORT</button>'
+      +'<button class="btn ghost small" data-board-kid="'+k.id+'">LEADERBOARD</button>'
+      +'<button class="btn ghost small" data-edit-kid="'+k.id+'">EDIT DETAILS</button>'
+      +'<button class="btn ghost small" data-pass-kid="'+k.id+'" data-name="'+esc(k.username)+'">NEW PASSWORD</button>'
+      +'<button class="btn ghost small" data-remove-kid="'+k.id+'" data-name="'+esc(k.username)+'">REMOVE</button></div></li>';
+  }).join(''):'<li>No children yet. Add one below, then they can log in.</li>';
+  renderPlan(kids.data.length);
+}
+$('f-add').addEventListener('submit',async e=>{e.preventDefault();
+  const msg=(t,cls)=>{$('f-msg').textContent=t;$('f-msg').className='msg '+cls;};
+  const username=$('f-user').value.trim().toLowerCase(), password=$('f-pass').value;
+  if(!/^[a-z0-9_-]{3,20}$/.test(username)) return msg('Usernames need 3 to 20 letters, numbers, - or _.','err');
+  if(password.length<8) return msg('The password needs at least 8 characters.','err');
+  try{await callChild({action:'add',username,password,...readChildFields('f')});
+    $('f-user').value='';$('f-pass').value='';$('f-extra').innerHTML=childFields('f');msg(username+' can now log in on the Player page.','good');await showFamily();
+  }catch(err){msg(err.message,'err');}
+});
+$('f-list').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const name=b.dataset.name;
+  if(b.dataset.reportKid){
+    const r=await db.from('progress').select('state').eq('child_id',b.dataset.reportKid).maybeSingle();
+    if(r.error){toast('That didn\'t work. Please try again.');return;}
+    viewingChild=kidsById[b.dataset.reportKid];S=Object.assign(fresh(),r.data&&r.data.state||{});
+    $('p-backrow').hidden=false;$('wipe').hidden=!r.data;$('wipeconfirm').textContent='';
+    showView('view-parent');renderParent();window.scrollTo({top:0});
+  }
+  if(b.dataset.boardKid){viewingChild=kidsById[b.dataset.boardKid];boardScope='overall';$('b-backrow').hidden=false;$('b-title').textContent='LEADERBOARD: '+viewingChild.username.toUpperCase();showView('view-board');renderBoard();window.scrollTo({top:0});}
+  if(b.dataset.editKid){const k=kidsById[b.dataset.editKid];
+    showDlg({title:'EDIT '+k.username.toUpperCase(),body:'<div class="authbox" style="max-width:none">'+childFields('e',k)+'</div>',
+      buttons:[{label:'SAVE',cls:'next',fn:async()=>{const details=readChildFields('e');
+        try{await callChild({action:'update',child_id:k.id,...details});toast('Details saved.');await showFamily();}catch(err){toast(err.message);}}},{label:'CANCEL'}]});
+  }
+  if(b.dataset.passKid){const id=b.dataset.passKid;
+    showDlg({title:'NEW PASSWORD',body:'<label class="field">New password for '+esc(name)+'<input id="np" type="text" autocomplete="off" maxlength="72"><small>At least 8 characters.</small></label>',
+      buttons:[{label:'SAVE',cls:'next',fn:async()=>{const password=$('np').value;
+        if(password.length<8){toast('Passwords need at least 8 characters.');return;}
+        try{await callChild({action:'password',child_id:id,password});toast('Password changed.');}catch(err){toast(err.message);}}},{label:'CANCEL'}]});
+  }
+  if(b.dataset.removeKid){const id=b.dataset.removeKid;
+    showDlg({title:'REMOVE '+name.toUpperCase()+'?',body:'<p>This deletes the login and all progress for <b>'+esc(name)+'</b>. It can\'t be undone.</p>',
+      buttons:[{label:'CANCEL',cls:'next'},{label:'DELETE',fn:async()=>{try{await callChild({action:'remove',child_id:id});await showFamily();}catch(err){toast(err.message);}}}]});
+  }
+});
+$('p-back').addEventListener('click',()=>{$('p-backrow').hidden=true;$('wipe').hidden=true;showFamily();});
+$('f-delete').addEventListener('click',()=>{
+  showDlg({title:'DELETE YOUR ACCOUNT?',body:'<p>This cancels any PayPal plan and deletes your account, your children\'s logins and all their progress. It can\'t be undone.</p>',
+    buttons:[{label:'CANCEL',cls:'next'},{label:'DELETE EVERYTHING',fn:async()=>{
+      try{if(plan.sub&&plan.sub.status!=='CANCELLED'&&plan.sub.status!=='EXPIRED')await callFn('paypal',{action:'cancel'});await callChild({action:'delete_account'});await db.auth.signOut();location.reload();}catch(err){toast(err.message);}}}]});
+});
+
+/* ---------- Your plan (PayPal) ---------- */
+/* What PayPal charges is set by the plans made in setup-paypal.mjs. Keep these prices the same. */
+const planPrice=n=>10+5*(n-1), MAX_PAID=6;
+const money=n=>'\u00A3'+n;
+const longDate=t=>new Date(t).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+let plan={sub:null,gift:false,error:false};
+async function loadPlan(){
+  plan={sub:null,gift:false,error:false};
+  const [s,g]=await Promise.all([db.from('subscriptions').select('paypal_id,status,seats,paid_until,next_billing_time').eq('parent_id',me.id).maybeSingle(),db.from('entitlements').select('paid_until').eq('parent_id',me.id).maybeSingle()]);
+  if(s.error||g.error){plan.error=true;return;}
+  plan.sub=s.data;
+  plan.gift=!!g.data&&(!g.data.paid_until||new Date(g.data.paid_until)>new Date());
+}
+const stillPaid=()=>plan.sub&&plan.sub.paid_until&&new Date(plan.sub.paid_until)>new Date();
+function activeSeats(){return plan.gift?99:(stillPaid()?plan.sub.seats:0);}
+function planMsg(t,good){const m=$('f-planmsg');if(m){m.textContent=t;m.className='msg '+(good?'good':'err');}}
+/* The promise a parent agrees to before paying. Get this wording checked before launch. */
+function agreeBox(text){return '<label class="check"><input type="checkbox" id="f-agree"><span>'+text+'</span></label>';}
+function renderPlan(n){
+  const box=$('f-plan'), children=n===1?'1 child':n+' children', price=money(planPrice(Math.max(n,1)));
+  const prices='<p>World 1 is always free. The full game has all 7 worlds and costs <b>'+money(10)+' for one child, plus '+money(5)+' for each extra child</b>, every 3 months.</p>';
+  const msg='<p class="msg" id="f-planmsg" role="status"></p>';
+  if(plan.error){box.innerHTML='<p>Plans aren\'t available right now. Please try again later.</p>';return;}
+  if(plan.gift){box.innerHTML='<h1>FULL GAME</h1><p>Your family has the full game for all your children, with nothing to pay.</p>';return;}
+  const sub=plan.sub;
+  if(sub&&sub.status==='ACTIVE'){
+    const covered=sub.seats===1?'1 child':sub.seats+' children';
+    let h='<h1>FULL GAME: '+covered.toUpperCase()+'</h1><p><b>'+money(planPrice(sub.seats))+'</b> every 3 months. '+(sub.next_billing_time?'Next payment: <b>'+longDate(sub.next_billing_time)+'</b>.':'')+'</p>';
+    if(n>MAX_PAID) h+='<p>Plans cover up to '+MAX_PAID+' children.</p>';
+    else if(n&&n!==sub.seats){
+      h+=n>sub.seats?'<p>You have '+children+', so '+(n-sub.seats===1?'one is':(n-sub.seats)+' are')+' on the free taster. Your newest children get the free taster first.</p>':'<p>You now have '+children+', so you could pay less.</p>';
+      h+=agreeBox('Change my plan to '+children+'. PayPal will charge '+price+' every 3 months, starting from my next payment, until I cancel.')+'<div class="actions"><button class="btn next" id="f-change" type="button">CHANGE PLAN IN PAYPAL</button></div>';
+    }
+    box.innerHTML=h+'<div class="actions"><button class="btn ghost" id="f-cancel" type="button">CANCEL PLAN</button></div>'+msg;
+    return;
+  }
+  const until=stillPaid()?new Date(plan.sub.paid_until):null;
+  let h='<h1>'+(until?'PLAN CANCELLED':(sub&&sub.status==='SUSPENDED'?'PAYMENT PROBLEM':'FREE TASTER'))+'</h1>';
+  if(sub&&sub.status==='SUSPENDED'&&!until) h+='<p>PayPal couldn\'t take your last payment, so the full game has closed. Your children\'s progress is safe.</p>';
+  else if(sub&&sub.status==='SUSPENDED') h+='<p>PayPal couldn\'t take your last payment. The full game stays open until <b>'+longDate(until)+'</b>.</p>';
+  else if(until) h+='<p>You won\'t be charged again. The full game stays open until <b>'+longDate(until)+'</b>.</p>';
+  box.innerHTML=h+prices;
+  if(!n){box.innerHTML+='<p>Add a child below, then you can choose a plan.</p>';return;}
+  if(n>MAX_PAID){box.innerHTML+='<p>Plans cover up to '+MAX_PAID+' children.</p>';return;}
+  const when=until?'PayPal will charge '+price+' around '+longDate(until)+', then every 3 months':'PayPal will charge '+price+' now, then every 3 months';
+  box.innerHTML+=agreeBox('I want the full game for '+children+'. '+when+' until I cancel, which I can do here at any time. I ask for access to start straight away, and I understand this affects my 14-day right to cancel.')
+    +'<div class="actions"><button class="btn next" id="f-pay" type="button">PAY WITH PAYPAL: '+price+'</button></div>'+msg;
+}
+const site=()=>location.origin+location.pathname;
+async function goToPayPal(action,btn){
+  if(!$('f-agree').checked){planMsg('Please tick the box first.');return;}
+  btn.disabled=true;planMsg('Opening PayPal...',true);
+  try{const r=await callFn('paypal',{action,site:site()});
+    if(r&&r.url){location.href=r.url;return;}
+    await showFamily();planMsg('Your plan has been updated.',true);
+  }catch(err){planMsg(err.message);btn.disabled=false;}
+}
+$('f-plan').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.id==='f-pay')goToPayPal('subscribe',b);
+  if(b.id==='f-change')goToPayPal('change',b);
+  if(b.id==='f-cancel'){const paid=plan.sub.paid_until?new Date(plan.sub.paid_until):null;
+    showDlg({title:'CANCEL YOUR PLAN?',body:'<p>You won\'t be charged again.'+(plan.sub.next_billing_time?' The full game stays open until <b>'+longDate(paid)+'</b>, then your children go back to World 1. Their progress is kept.':'')+'</p>',
+      buttons:[{label:'KEEP MY PLAN',cls:'next'},{label:'CANCEL PLAN',fn:async()=>{
+        try{await callFn('paypal',{action:'cancel'});await showFamily();planMsg('Your plan is cancelled. You won\'t be charged again.',true);}catch(err){planMsg(err.message);}}}]});
+  }
+});
+/* PayPal sends the parent back here. The server asks PayPal what happened, so nothing in this address can unlock anything. */
+async function finishPayPalReturn(){
+  const q=new URLSearchParams(location.search), id=q.get('subscription_id'), cancelled=q.get('paypal')==='cancelled';
+  if(!id&&!cancelled) return {};
+  history.replaceState(null,'',location.pathname);
+  if(cancelled) return {msg:'You left PayPal before finishing, so nothing was charged.'};
+  try{await callFn('paypal',{action:'sync',subscription_id:id});return {synced:true,msg:'Thank you. Your plan is set up. Your children may need to log in again to see the new worlds.',good:true};}
+  catch(err){return {msg:'We\'re still waiting to hear from PayPal. Please reload this page in a minute.'};}
+}
+
+/* ---------- Leaderboards ---------- */
+let boardScope='overall', boardAsk=0;
+async function renderBoard(){
+  const kid=role==='child'?myKid:viewingChild, ask=++boardAsk, school=boardScope==='school';
+  $('b-overall').setAttribute('aria-selected',!school);$('b-overall').setAttribute('aria-pressed',!school);
+  $('b-school').setAttribute('aria-selected',school);$('b-school').setAttribute('aria-pressed',school);
+  const sub=role==='child'?'you':'your child', Sub=role==='child'?'You':'Your child';
+  $('b-note').textContent=kid.on_leaderboard?Sub+(role==='child'?' appear as ':' appears as ')+kid.nickname+'. Points come from finished quests.':(role==='child'?'You aren\'t on the leaderboards yet. Your parent or carer can turn this on for you.':'Your child isn\'t on the leaderboards. You can turn this on with EDIT DETAILS on your family page.');
+  $('b-yearh').hidden=!school;$('b-rows').innerHTML='';$('b-wrap').hidden=true;
+  if(school&&!kid.school_urn){$('b-msg').className='msg';$('b-msg').textContent=role==='child'?'Your parent or carer hasn\'t added your school yet.':'Add your child\'s school with EDIT DETAILS to see this board.';return;}
+  $('b-msg').className='msg';$('b-msg').textContent='Loading...';
+  if(role==='child') await pushNow();
+  const {data,error}=await db.rpc('leaderboard',{scope:boardScope,for_child:role==='parent'?kid.id:null});
+  if(ask!==boardAsk) return;
+  if(error){$('b-msg').className='msg err';$('b-msg').textContent='The leaderboard didn\'t load. Please try again.';return;}
+  $('b-msg').textContent=data.length?'':'Nobody is on this board yet. Finish a quest and be the first.';
+  $('b-wrap').hidden=!data.length;
+  $('b-rows').innerHTML=data.map(r=>'<tr'+(r.is_me?' class="me"':'')+'><td>'+r.place+'</td><td>'+esc(r.nickname)+(r.is_me?' ('+sub+')':'')+'</td>'+(school?'<td>'+(r.year_group?'Year '+r.year_group:'&ndash;')+'</td>':'')+'<td>'+r.points+'</td></tr>').join('');
+}
+$('b-overall').addEventListener('click',()=>{boardScope='overall';renderBoard();});
+$('b-school').addEventListener('click',()=>{boardScope='school';renderBoard();});
+$('b-back').addEventListener('click',()=>{$('b-backrow').hidden=true;$('b-title').textContent='LEADERBOARD';showFamily();});
+
+/* ---------- Start ---------- */
+(async function boot(){
+  const recovering=/type=recovery/.test(location.hash);
+  if(!window.supabase||CONFIG.url.startsWith('YOUR_')){loadingMsg(window.supabase?'Code Quarry is getting ready to open. Please check back soon.':'We couldn\'t reach the login service. Please check your connection and reload the page.',!!window.supabase===false);return;}
+  db=window.supabase.createClient(CONFIG.url,CONFIG.key);
+  db.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'&&me)location.reload();});
+  const {data}=await db.auth.getSession();
+  if(!data.session){showAuth(recovering?'parent':'player',recovering?'That link has expired. Please ask for a new one.':'');return;}
+  if(recovering){showAuth('newpass');return;}
+  await enter(data.session.user);
+})();
+})();
+</script>
+
+</body>
+</html>
