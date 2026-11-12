@@ -182,6 +182,8 @@ td small,.sub{color:var(--muted);font-size:13px}
 .foot{color:var(--muted);font-size:13px;padding-block:0 32px}
 .foot p{max-width:80ch;margin:0}
 .foot a{color:var(--diamond)}
+.donate{margin-left:auto}
+.donate[hidden]{display:none}
 dialog{background:var(--panel);color:var(--text);border:3px solid #000;box-shadow:inset 0 0 0 3px var(--line),8px 8px 0 rgba(0,0,0,.45);padding:24px;width:min(560px,calc(100vw - 32px));overflow:hidden}
 dialog::backdrop{background:rgba(8,10,20,.8)}
 dialog h2{font-family:var(--f-display);font-size:16px;line-height:1.6;color:var(--gold);margin:0 0 12px;text-shadow:2px 2px 0 #000}
@@ -253,6 +255,7 @@ tr.me td{background:var(--panel-2);color:var(--gold);font-weight:700}
       <div class="chip" title="Ore collected"><span class="ore coal"></span><span id="o-coal">0</span><span class="ore iron"></span><span id="o-iron">0</span><span class="ore gold"></span><span id="o-gold">0</span><span class="ore diamond"></span><span id="o-diamond">0</span></div>
     </div>
     <div class="whochip" id="whochip" hidden><span id="who"></span><button class="btn ghost small" id="logout">LOG OUT</button></div>
+    <a class="btn ghost small donate" id="donate-top" target="_blank" rel="noopener" hidden>SUPPORT ON KO-FI</a>
   </div>
 </header>
 
@@ -1461,6 +1464,11 @@ $('cert-back').addEventListener('click',()=>{document.body.classList.remove('pri
 /* Every world is free. Donations go through Ko-fi, which is only a link: nothing on Ko-fi changes what anyone can play.
    Put your Ko-fi page here, such as 'https://ko-fi.com/yourname'. While it's empty, the button is hidden. */
 const DONATE_URL='https://ko-fi.com/vasanthmshanmugam';
+/* The Ko-fi button in the top bar and the link in the footer show on every page. */
+if(DONATE_URL){$('donate-top').href=DONATE_URL;$('donate-top').hidden=false;
+  const p=document.createElement('p');p.style.marginTop='8px';
+  p.innerHTML='Code Quarry is free. If it helps, you can <a href="'+esc(DONATE_URL)+'" target="_blank" rel="noopener">support it on Ko-fi</a>.';
+  document.querySelector('footer.foot').appendChild(p);}
 /* Prices of the old PayPal plans, only to tell a family what a plan left over from before is still charging. */
 const planPrice=n=>10+5*(n-1);
 const money=n=>'£'+n;
