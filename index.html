@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Code Quarry: learn Python for GCSE</title>
-<meta name="description" content="Try World 1 free: a block-mining game that teaches Python from zero to GCSE. Real code runs in the browser, quests are checked automatically, and a parent view shows which skills are secure.">
+<meta name="description" content="Free for every family: a block-mining game that teaches Python from zero to GCSE. Real code runs in the browser, quests are checked automatically, and a parent view shows which skills are secure.">
 <meta property="og:title" content="Code Quarry: learn Python for GCSE">
-<meta property="og:description" content="Try World 1 free: a block-mining game that teaches Python from zero to GCSE. Nothing to install.">
+<meta property="og:description" content="Free for every family: a block-mining game that teaches Python from zero to GCSE. Nothing to install.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://vasanthshanmugam.github.io/python_gcse/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%236b4a2e'/%3E%3Crect width='16' height='6' fill='%235fa83a'/%3E%3C/svg%3E">
@@ -43,6 +43,13 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var
 .stats{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-left:auto}
 .chip{display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--line);padding:6px 10px;font-size:14px;font-variant-numeric:tabular-nums}
 .chip b{font-family:var(--f-display);font-size:11px;color:var(--gold)}
+.avatar{display:block;flex:none}
+.upgrade{display:flex;align-items:center;gap:12px;margin:8px 0;padding:8px 10px;background:var(--panel-2);border:2px solid var(--line)}
+.upgrade b{font-family:var(--f-display);font-size:11px;line-height:1.5;color:var(--gold)}
+.upgrade p{margin:4px 0 0}
+.board-name{display:flex;align-items:center;gap:8px}
+.board-school:not([hidden]){display:flex;align-items:center;gap:8px;margin:10px 0}
+.board-school select{flex:1;min-width:0;max-width:420px;font:inherit;font-size:16px;color:var(--text);background:var(--code-bg);border:3px solid #000;padding:8px}
 .xpbar{width:110px;height:12px;background:var(--code-bg);border:2px solid #000;position:relative}
 .xpbar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(var(--ok),var(--grass-dark));width:0;transition:width .5s}
 .ore{width:14px;height:14px;display:inline-block;box-shadow:inset -2px -2px 0 rgba(0,0,0,.35)}
@@ -118,6 +125,7 @@ textarea#code:focus{outline:none}
 .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .btn{font-family:var(--f-display);font-size:11px;padding:12px 16px;border:3px solid #000;cursor:pointer;color:#111;background:var(--stone);box-shadow:inset -4px -4px 0 rgba(0,0,0,.3),inset 4px 4px 0 rgba(255,255,255,.25)}
 .btn:active{transform:translateY(2px)}
+a.btn{display:inline-block;text-decoration:none}
 .btn.run{background:var(--ok)}
 .btn.next{background:var(--gold)}
 .btn.ghost{background:var(--panel-2);color:var(--text)}
@@ -212,6 +220,16 @@ dialog .actions{margin-top:16px;position:relative}
 .kid .actions{margin:0}
 .whochip{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
 .btn.small{font-size:9px;padding:8px 10px}
+.digbtn{border:3px solid var(--gold);color:var(--gold);font-weight:700}
+.digwrap{padding:10px 14px 0}
+.clashcode{font-family:var(--f-code);font-size:24px;letter-spacing:3px;color:var(--gold)}
+.clashtime{font-family:var(--f-display);font-size:16px;color:var(--gold)}
+.ticks{display:flex;flex-direction:column;gap:6px}
+#cert{background:#fff;color:#111;border:12px double #6b4a2e;padding:48px 24px;text-align:center;max-width:760px;margin:0 auto}
+#cert h1{font-family:var(--f-display);font-size:22px;line-height:1.6;color:#6b4a2e;margin:0 0 24px}
+#cert .who{font-family:var(--f-display);font-size:20px;line-height:1.6;margin:18px 0}
+#cert p{font-size:18px;margin:10px 0}
+@media print{body.printcert header,body.printcert footer,body.printcert .no-print{display:none!important}body.printcert{background:#fff}}
 .field select{font:inherit;font-size:16px;color:var(--text);background:var(--code-bg);border:3px solid #000;padding:10px;width:100%}
 .board-tabs{display:flex;flex-wrap:wrap;gap:6px}
 tr.me td{background:var(--panel-2);color:var(--gold);font-weight:700}
@@ -224,12 +242,14 @@ tr.me td{background:var(--panel-2);color:var(--gold);font-weight:700}
     <div class="logo"><span class="blk" aria-hidden="true"></span>CODE QUARRY</div>
     <div class="tabs" id="tabs" role="tablist" hidden>
       <button class="tab" id="tab-quests" role="tab" aria-selected="true">Quests</button>
+      <button class="tab" id="tab-clash" role="tab" aria-selected="false" hidden>Family Clash</button>
       <button class="tab" id="tab-board" role="tab" aria-selected="false">Leaderboard</button>
       <button class="tab" id="tab-parent" role="tab" aria-selected="false">Parent view</button>
     </div>
     <div class="stats" id="stats" hidden>
+      <div class="chip" id="avatar-chip"><span id="avatar"></span><b id="power">POWER 10</b></div>
       <div class="chip" title="Level"><b id="lvl">LV 1</b><div class="xpbar" aria-hidden="true"><i id="xpfill"></i></div><span id="xptxt">0 / 150 XP</span></div>
-      <div class="chip" title="Day streak"><span class="flame" aria-hidden="true"></span><span id="streak">0 day streak</span></div>
+      <div class="chip" title="Day streak. One missed day a week is free."><span class="flame" aria-hidden="true"></span><span id="streak">0 day streak</span></div>
       <div class="chip" title="Ore collected"><span class="ore coal"></span><span id="o-coal">0</span><span class="ore iron"></span><span id="o-iron">0</span><span class="ore gold"></span><span id="o-gold">0</span><span class="ore diamond"></span><span id="o-diamond">0</span></div>
     </div>
     <div class="whochip" id="whochip" hidden><span id="who"></span><button class="btn ghost small" id="logout">LOG OUT</button></div>
@@ -247,7 +267,11 @@ tr.me td{background:var(--panel-2);color:var(--gold);font-weight:700}
     <div class="summary"><h1>YOUR FAMILY</h1><p>Create a login for each child. They log in with the username and password you choose here, and don't need an email address. You can view each child's report from here.</p></div>
     <h2>CHILDREN</h2>
     <ul class="chat" id="f-list"></ul>
-    <h2>YOUR PLAN</h2>
+    <h2>FAMILY CLASH</h2>
+    <div class="summary authbox" id="f-clash" style="max-width:none"></div>
+    <h2 id="f-trophies-h" hidden>TROPHIES</h2>
+    <ul class="chat" id="f-trophies" hidden></ul>
+    <h2>SUPPORT CODE QUARRY</h2>
     <div class="summary authbox" id="f-plan" style="max-width:none"></div>
     <h2>ADD A CHILD</h2>
     <form class="summary authbox" id="f-add" novalidate>
@@ -260,17 +284,30 @@ tr.me td{background:var(--panel-2);color:var(--gold);font-weight:700}
     <div class="actions no-print"><button class="btn ghost" id="f-delete">DELETE MY ACCOUNT</button></div>
   </section>
 
+  <section id="view-clash" class="parent" hidden>
+    <div class="summary"><h1 id="c-title">FAMILY CLASH</h1><p id="c-note"></p><p class="clashtime" id="c-time" role="timer"></p><div class="actions no-print" id="c-actions"></div></div>
+    <div class="tblwrap" id="c-wrap"><table><thead><tr><th>PLACE</th><th>PLAYER</th><th>ANSWERED</th><th>SCORE</th></tr></thead><tbody id="c-rows"></tbody></table></div>
+  </section>
+
+  <section id="view-cert" hidden>
+    <div class="actions no-print" style="margin-bottom:12px"><button class="btn next" id="cert-print">PRINT CERTIFICATE</button><button class="btn ghost" id="cert-back">&#9664; BACK TO FAMILY</button></div>
+    <div id="cert"></div>
+  </section>
+
   <section id="view-board" class="parent" hidden>
     <div class="actions no-print" id="b-backrow" hidden><button class="btn ghost" id="b-back">&#9664; BACK TO FAMILY</button></div>
     <div class="summary"><h1 id="b-title">LEADERBOARD</h1><p id="b-note"></p></div>
-    <div class="board-tabs"><button class="tab" id="b-overall" aria-pressed="true">Everyone</button><button class="tab" id="b-school" aria-pressed="false">My school</button></div>
+    <div class="board-tabs"><button class="tab" id="b-overall" aria-pressed="true">Everyone</button><button class="tab" id="b-school" aria-pressed="false">Schools</button></div>
+    <div class="board-tabs"><button class="tab" id="b-all" aria-pressed="true">All time</button><button class="tab" id="b-week" aria-pressed="false">This week</button></div>
+    <label class="board-school" id="b-pickwrap" hidden><span>School</span><select id="b-pick"></select></label>
     <p class="msg" id="b-msg" role="status"></p>
-    <div class="tblwrap" id="b-wrap"><table><thead><tr><th>PLACE</th><th>NICKNAME</th><th id="b-yearh">YEAR</th><th>POINTS</th></tr></thead><tbody id="b-rows"></tbody></table></div>
-    <p class="note">Only logged-in players can see this. It shows nicknames, never names or usernames. Your school's board can only be seen by families at your school.</p>
+    <div class="tblwrap" id="b-wrap"><table><thead><tr><th>PLACE</th><th>AVATAR NAME</th><th id="b-yearh">YEAR</th><th>POINTS</th></tr></thead><tbody id="b-rows"></tbody></table></div>
+    <p class="note">Only logged-in players can see this. It shows avatar names, never real names or usernames. Only families at a school can see the year groups on its board.</p>
   </section>
 
   <section id="view-quests" class="grid" hidden>
     <nav class="path" aria-label="Quests">
+      <div class="digwrap"><button class="wbtn digbtn" id="dig-btn" type="button"></button></div>
       <h2 id="wname"></h2>
       <ol class="qlist" id="qlist"></ol>
       <div class="worlds"><div class="lbl">WORLDS</div><div id="worlds" style="display:contents"></div></div>
@@ -333,6 +370,10 @@ tr.me td{background:var(--panel-2);color:var(--gold);font-weight:700}
     <h2>WORTH A CHAT</h2>
     <ul class="chat" id="p-chat"></ul>
 
+    <h2 id="p-dig-h" hidden>DAILY DIG</h2>
+    <p class="note" id="p-dig-note" hidden></p>
+    <div class="tblwrap" id="p-dig-wrap" hidden><table><thead><tr><th>SKILL</th><th>REVIEW QUESTIONS DONE</th><th>RIGHT FIRST TIME</th></tr></thead><tbody id="p-dig-rows"></tbody></table></div>
+
     <h2>QUEST BY QUEST</h2>
     <div class="tblwrap">
       <table>
@@ -352,7 +393,7 @@ tr.me td{background:var(--panel-2);color:var(--gold);font-weight:700}
   </section>
 </main>
 <footer class="wrap foot">
-  <p>World 1 of Code Quarry is a free taster, with no ads or tracking. A login is needed to play. We store the parent's email address and, for each child, a username, their progress including the code they write in quests, and any school and year group a parent adds. If a parent opts in, a child's generated nickname and points appear on leaderboards that only logged-in players can see. Payments are handled by PayPal, and we never see card or bank details. The Python engine and fonts download from jsDelivr and Google Fonts. Topics follow the GCSE Computer Science specifications (OCR J277 and AQA 8525), but the game isn't endorsed by either exam board.</p>
+  <p>World 1 of Code Quarry is a free taster, with no ads or tracking. A login is needed to play. We store the parent's email address and, for each child, a username, their progress including the code they write in quests, and any school and year group a parent adds. If a parent opts in, a child's generated avatar name, avatar picture and points appear on leaderboards that only logged-in players can see, and their avatar name and score appear in any Family Clash that parent adds them to. Payments are handled by PayPal, and we never see card or bank details. The Python engine and fonts download from jsDelivr and Google Fonts. Topics follow the GCSE Computer Science specifications (OCR J277 and AQA 8525), but the game isn't endorsed by either exam board.</p>
 </footer>
 <dialog id="dlg" aria-labelledby="dlg-title"><div class="fall" id="dlg-fall" aria-hidden="true"></div><h2 id="dlg-title"></h2><div id="dlg-body"></div><div class="actions" id="dlg-actions"></div></dialog>
 
@@ -370,6 +411,34 @@ const has = (code, re) => re.test(bare(code));
 const num = v => new RegExp('(^|[^\\d.-])' + String(v).replace('.', '\\.') + '(?!\\d)', 'm');             // matches the number v, not part of a longer one
 const ok = (msg) => ({ok:true, msg});
 const no = (msg) => ({ok:false, msg});
+
+/* ---------- Daily Dig helpers ---------- */
+const DIG_XP=10, DIG_PER_DAY=3;   // the limit also lives in supabase/dig.sql
+function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function makeRng(seed){let a=seed>>>0;const next=()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};
+  return {int:(lo,hi)=>lo+Math.floor(next()*(hi-lo+1)),pick:list=>list[Math.floor(next()*list.length)]};}
+/* A "what does this print?" question. It is answered by printing the prediction, so it needs no extra screen. */
+function predictQ(o){const want=o.answer.map(String), one=want.length===1;
+  return {title:o.title,task:`What does this program print? Work it out in your head, then change the code below so it prints your answer.<pre class="ex">${esc(o.program)}</pre>`,
+    starter:want.map((_,i)=>`print("my answer${one?'':' for line '+(i+1)}")`).join('\n')+'\n',
+    hints:[o.why,'The answer is:\n'+want.join('\n')],solution:want.map(w=>`print("${w}")`).join('\n'),
+    check(c){const copied=o.program.split('\n').map(l=>l.trim()).filter(l=>l.length>6&&!/^print\("/.test(l)).some(l=>c.code.includes(l));
+      if(copied) return no('Work it out in your head rather than running the program. Just print your answer.');
+      const got=lines(c.printed); if(got.join('\n')===want.join('\n')) return ok('Right. '+o.why);
+      return no(got.length!==want.length?`The program prints ${want.length} line${one?'':'s'}, but yours printed ${got.length}.`:'Not that one. '+o.why);}};}
+/* Every player in a Clash gets the same questions, in the same order, worked out from the Clash's seed. Easier worlds come first. */
+function clashSet(c,worlds){
+  const pools=worlds.slice(0,c.level).map(w=>w.dig||[]).filter(p=>p.length);
+  const flat=pools.flat();if(!flat.length) return [];
+  const r=makeRng(c.seed), order=[];
+  for(const p of pools){const a=p.slice();for(let i=a.length-1;i>0;i--){const j=r.int(0,i);[a[i],a[j]]=[a[j],a[i]];}order.push(...a);}
+  const out=[];
+  for(let n=0;n<c.q_count;n++){const t=order[n%order.length];
+    const q=digQuest(t,'x',n,hashStr(c.seed+':'+n));
+    out.push(Object.assign(q,{id:'clash:'+c.id+':'+n,dig:false,clash:true,n,hints:[]}));}
+  return out;
+}
+function digQuest(t,day,n,seed){const q=t.make(makeRng(seed));return Object.assign({learn:'',ore:'coal',gcse:t.skill},q,{id:'dig:'+day+':'+n,dig:true,template:t.id,skill:t.skill,day});}
 
 /* Worlds are NOT in this page. They download after login, and only the ones the account may play (see SETUP.md). */
 let WORLDS=[], QUESTS=[];
@@ -564,7 +633,7 @@ async function grade(q, c){
 
 /* ---------- State ---------- */
 /* Paste your Supabase project's URL and publishable (anon) key here. Both are safe to publish: the database rules protect the data. Never put the service role key in this file. */
-const CONFIG={url:'YOUR_SUPABASE_URL',key:'YOUR_SUPABASE_PUBLISHABLE_KEY'};
+const CONFIG={url:'https://msywlddvkfjykkgjuznn.supabase.co',key:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zeXdsZGR2a2ZqeWtrZ2p1em5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4MjI1ODksImV4cCI6MjEwOTM5ODU4OX0.fu0vsF2QiAcf3PoRokZ03k5CHdsdd3d15t2x8G05N94'};
 const CHILD_DOMAIN='children.codequarry.invalid';   // children have no email address. Their username becomes a login that can never receive mail. Must match the manage-child function.
 const KEY='codequarry.v1';
 let db=null, me=null, role=null, viewingChild=null, META=[];
@@ -595,15 +664,60 @@ const unlocked=i=>i===0||qs(QUESTS[i-1].id).done;
 const worldOf=id=>WORLDS.find(w=>w.quests.some(q=>q.id===id));
 function markDay(){if(!S.days.includes(today()))S.days.push(today());}
 
-function streak(){const set=new Set(S.days);let n=0;const d=new Date();if(!set.has(today())) d.setDate(d.getDate()-1);
-  for(;;){if(set.has(dayKey(d))){n++;d.setDate(d.getDate()-1);}else break;} return n;}
+/* A streak survives one missed day a week: free days must be at least 7 days apart. A free day keeps a streak alive but doesn't add to it. Worked out from S.days, so nothing extra is saved. */
+const FREE_DAY_GAP=7;
+function streakInfo(){const set=new Set(S.days),d=new Date();let n=0,step=0,lastFree=null,newestFree=null;
+  if(!set.has(today())){d.setDate(d.getDate()-1);step=1;}
+  for(;;step++,d.setDate(d.getDate()-1)){
+    if(set.has(dayKey(d))){n++;if(lastFree!==null&&newestFree===null)newestFree=lastFree;}
+    else if(lastFree===null||step-lastFree>=FREE_DAY_GAP)lastFree=step;
+    else break;}
+  return {n,freeAgo:newestFree};}
+function streak(){return streakInfo().n;}
 
 /* ---------- DOM ---------- */
 const $=id=>document.getElementById(id);
 const code=$('code'), con=$('console'), fb=$('feedback');
 let cur=null, viewWorld=null;
 
+/* ---------- Avatar ---------- */
+/* Worked out from ores, which are earned once per quest and stay saved if a plan lapses, so an avatar never shrinks. Only bosses give diamonds, so each diamond is a world beaten. */
+const POWER_OF={coal:1,iron:2,gold:3,diamond:5};
+const AVATARS=[
+  {name:'New Digger',body:'#8a6a42',trim:'#4a321f',eye:'#f2c94c'},
+  {name:'Pick Hand',body:'#8a6a42',trim:'#4a321f',helm:'#a5794a',tool:'#9a7b4f',eye:'#f2c94c'},
+  {name:'Tunneller',body:'#7d8491',trim:'#4d525c',helm:'#9aa1ad',tool:'#9aa1ad',eye:'#f2c94c'},
+  {name:'Iron Miner',body:'#d8c8b8',trim:'#8d8278',helm:'#efe3d6',tool:'#d8c8b8',lamp:1,eye:'#ff9a3c'},
+  {name:'Gold Seeker',body:'#d8c8b8',trim:'#f2c94c',helm:'#f2c94c',tool:'#f2c94c',lamp:1,eye:'#ff9a3c'},
+  {name:'Gem Cutter',body:'#f2c94c',trim:'#b88a1e',helm:'#f2c94c',tool:'#5ce1e6',lamp:1,cape:'#e5574a',eye:'#5ce1e6'},
+  {name:'Deep Warden',body:'#5ce1e6',trim:'#f2c94c',helm:'#5ce1e6',tool:'#5ce1e6',lamp:1,cape:'#e5574a',eye:'#ffffff'},
+  {name:'Quarry Legend',body:'#5ce1e6',trim:'#f2c94c',helm:'#f2c94c',tool:'#ffffff',crown:1,cape:'#8e5bd8',eye:'#ffffff'},
+];
+const avatarNow=()=>AVATARS[Math.min(S.ores.diamond||0,AVATARS.length-1)];
+const avatarNext=()=>AVATARS[Math.min(S.ores.diamond||0,AVATARS.length-1)+1];
+const power=()=>Object.keys(POWER_OF).reduce((n,o)=>n+(S.ores[o]||0)*POWER_OF[o],10);
+function avatarSvg(a,size,label){
+  const r=[];
+  if(a.cape) r.push([3,8,10,7,a.cape]);
+  r.push([5,13,2,3,a.trim],[9,13,2,3,a.trim],[5,8,6,5,a.body],[5,11,6,1,a.trim],[3,8,2,4,a.trim],[11,8,2,4,a.trim],[7,9,2,1,a.eye]);
+  r.push([4,3,8,5,a.body],[5,4,6,3,'#141a2b'],[6,5,1,1,a.eye],[9,5,1,1,a.eye]);
+  if(a.helm) r.push([3,2,10,2,a.helm]);
+  if(a.lamp) r.push([7,0,2,2,'#ffd25a']);
+  if(a.crown) r.push([4,1,8,1,'#f2c94c'],[4,0,1,1,'#f2c94c'],[7,0,2,1,'#f2c94c'],[11,0,1,1,'#f2c94c']);
+  if(a.tool) r.push([13,5,1,8,'#9a7b4f'],[12,4,4,1,a.tool],[12,5,1,1,a.tool],[15,5,1,1,a.tool]);
+  return `<svg class="avatar" role="img" aria-label="${esc(label||'Your digger: '+a.name)}" width="${size}" height="${size}" viewBox="0 0 16 16" shape-rendering="crispEdges">${r.map(([x,y,w,h,f])=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${f}"/>`).join('')}</svg>`;
+}
+/* The reward shown when a quest is finished. Streaks are counted by streak(), and a RUN is enough to keep one going. */
+function upgradeBox(gain,newLook){
+  const a=avatarNow(), nx=avatarNext(), {n:st,freeAgo}=streakInfo(), wait=FREE_DAY_GAP-freeAgo;
+  const line=`Power ${power()} (+${gain}). ${st} day streak: come back tomorrow to keep it going.`;
+  const free=freeAgo!==null&&wait>0?`Your free missed day saved this streak. You get another in ${wait} day${wait===1?'':'s'}.`:'You get one free missed day a week.';
+  return `<div class="upgrade">${avatarSvg(a,64)}<div><b>${newLook?'NEW LOOK: '+esc(a.name.toUpperCase()):'YOUR DIGGER GOT STRONGER'}</b><p>${line} ${free}</p>${!newLook&&nx?`<p>Beat this world's boss to become a ${esc(nx.name)}.</p>`:''}</div></div>`;
+}
+
 function renderStats(){
+  const av=avatarNow();
+  $('avatar').innerHTML=avatarSvg(av,28); $('power').textContent='POWER '+power(); $('avatar-chip').title=av.name;
   const lvl=Math.floor(S.xp/XP_LEVEL)+1, into=S.xp%XP_LEVEL;
   $('lvl').textContent='LV '+lvl; $('xpfill').style.width=(into/XP_LEVEL*100)+'%'; $('xptxt').textContent=into+' / '+XP_LEVEL+' XP';
   const st=streak(); $('streak').textContent=st+' day streak';
@@ -611,17 +725,21 @@ function renderStats(){
 }
 function renderList(){
   const wi=WORLDS.indexOf(viewWorld);
+  renderDigBtn();
+  if(cur&&cur.clash) renderClashList(); else if(cur&&cur.dig) renderDigList(); else {
   $('wname').innerHTML=`WORLD ${wi+1}<small>${esc(viewWorld.name)}: ${esc(viewWorld.subtitle)}</small>`;
   $('qlist').innerHTML=viewWorld.quests.map((q,n)=>{const s=qs(q.id),u=unlocked(idx(q.id));
     return `<li><button class="qbtn${s.done?' done':''}${q.boss?' boss':''}" data-id="${q.id}" ${u?'':'disabled'} aria-current="${q.id===cur.id}"><span class="st">${s.done?'&#10003;':(q.boss?'!':n+1)}</span><span class="nm">${esc(q.title)}<span class="tg">${s.done?'Complete':(u?esc(q.gcse):'Locked')}</span></span></button></li>`;}).join('');
+  }
   $('worlds').innerHTML=META.map((m,k)=>{const w=WORLDS.find(x=>x.id===m.id);
     if(!w) return `<button class="wbtn" data-world="${esc(m.id)}" disabled><span>${k+1}. ${esc(m.name)}</span><span class="wst">FULL GAME</span></button>`;
     const u=unlocked(idx(w.quests[0].id)), d=w.quests.filter(q=>qs(q.id).done).length, all=d===w.quests.length;
     return `<button class="wbtn${all?' done':''}" data-world="${w.id}" ${u?'':'disabled'} aria-current="${w===viewWorld}"><span>${k+1}. ${esc(w.name)}</span><span class="wst">${all?'DONE':(u?d+'/'+w.quests.length:'LOCKED')}</span></button>`;}).join('');
 }
 function renderQuest(){
-  const s=qs(cur.id), w=worldOf(cur.id), n=w.quests.indexOf(cur)+1, wn=WORLDS.indexOf(w)+1;
-  $('qeyebrow').textContent=cur.exam?(cur.boss?'MOCK EXAM QUESTION':'EXAM QUESTION '+n+' OF '+w.quests.length)+' · '+cur.minutes+' MINUTES':('WORLD '+wn+' · '+(cur.boss?'BOSS LEVEL':'QUEST '+n+' OF '+w.quests.length));
+  const s=qs(cur.id), w=worldOf(cur.id)||WORLDS[0], n=w.quests.indexOf(cur)+1, wn=WORLDS.indexOf(w)+1;
+  $('qlearn').hidden=!cur.learn;
+  $('qeyebrow').textContent=cur.clash?'FAMILY CLASH · QUESTION '+(cur.n+1)+' OF '+clash.q_count:cur.dig?'DAILY DIG · QUESTION '+(digQuests().indexOf(cur)+1)+' OF '+digQuests().length:cur.exam?(cur.boss?'MOCK EXAM QUESTION':'EXAM QUESTION '+n+' OF '+w.quests.length)+' · '+cur.minutes+' MINUTES':('WORLD '+wn+' · '+(cur.boss?'BOSS LEVEL':'QUEST '+n+' OF '+w.quests.length));
   $('qtitle').textContent=cur.title;
   $('qlearn').innerHTML=cur.learn;
   $('qtask').innerHTML=cur.task;
@@ -633,6 +751,7 @@ function renderQuest(){
   hintBtn(); renderTimer();
 }
 function hintBtn(){const s=qs(cur.id);const b=$('hint');
+  if(cur.clash){b.textContent='NO HINTS IN A CLASH';b.disabled=true;return;}
   if(cur.exam){
     if(s.shown){b.textContent='ANSWER SHOWN';b.disabled=true;}
     else if(s.done||(s.examSecs||0)>=cur.minutes*60){b.textContent='SHOW MODEL ANSWER';b.disabled=false;}
@@ -645,17 +764,18 @@ function hintBtn(){const s=qs(cur.id);const b=$('hint');
 function updGutter(){const n=code.value.split('\n').length;let t='';for(let k=1;k<=n;k++)t+=k+(k<n?'\n':'');$('gutter').textContent=t;}
 const mmss=sec=>Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
 function renderTimer(){const t=$('etimer');
+  if(cur.clash){t.hidden=false;t.classList.remove('over');t.textContent='TIME LEFT '+mmss(clashLeft());return;}
   if(!cur.exam){t.hidden=true;return;}
   const s=qs(cur.id), used=s.examSecs||0, limit=cur.minutes*60;
   t.hidden=false; t.classList.toggle('over',used>limit);
   t.textContent=s.done?'FINISHED IN '+mmss(used):(used<=limit?'TIME LEFT '+mmss(limit-used):'OVER TIME +'+mmss(used-limit));
 }
 
-function doneBox(q,isNew){const s=qs(q.id); const nxt=playable()[idx(q.id)+1];
+function doneBox(q,isNew){if(q.clash)return clashDoneBox(q,isNew);if(q.dig)return digDoneBox(q,isNew);const s=qs(q.id); const nxt=playable()[idx(q.id)+1];
   const xp=q.boss?BOSS_XP:XP_PER;
   const nextLabel=nxt&&q.boss?'ENTER WORLD '+(WORLDS.indexOf(worldOf(nxt.id))+1)+' &#9654;':'NEXT QUEST &#9654;';
   return `<div class="fb good"><div class="h">${isNew?'QUEST COMPLETE!':'ALREADY COMPLETE'}</div>
-  ${isNew?`<div class="reward"><span>+${xp} XP</span><span><i class="ore ${q.ore}"></i> +1 ${q.ore}</span></div>`:''}
+  ${isNew?`<div class="reward"><span>+${xp} XP</span><span><i class="ore ${q.ore}"></i> +1 ${q.ore}</span></div>${upgradeBox(POWER_OF[q.ore],q.boss)}`:''}
   <p>${isNew?esc(s.lastMsg||''):'You can keep experimenting here. It won\'t change your score.'}</p>
   <div class="actions" style="margin-top:6px">${nxt?`<button class="btn next" data-go="${nxt.id}">${nextLabel}</button>`:(fullAccess()?`<span>You've finished every quest in Code Quarry.</span>`:`<span>You've finished the free taster.</span><button class="btn next" data-report>SHOW THE PARENT REPORT</button>`)}</div></div>`;}
 
@@ -672,12 +792,12 @@ function worldComplete(w){
   const k=WORLDS.indexOf(w), after=META[k+1], nxt=WORLDS[k+1];
   if(after&&!nxt){
     showDlg({party:true,title:'FREE TASTER COMPLETE!',
-      body:`<p>${esc(w.win)}</p><p>That's the end of the free taster. The full game carries on with <b>World ${k+2}: ${esc(after.name)}</b>, ${esc(after.subtitle)}.</p><p>Show a parent or carer your report. It shows what you've learned.</p>`,
+      body:`${upgradeBox(POWER_OF.diamond,true)}<p>${esc(w.win)}</p><p>That's the end of the free taster. The full game carries on with <b>World ${k+2}: ${esc(after.name)}</b>, ${esc(after.subtitle)}.</p><p>Show a parent or carer your report. It shows what you've learned.</p>`,
       buttons:[{label:'SHOW THE PARENT REPORT',cls:'next',fn:showReport},{label:'STAY HERE'}]});
     return;
   }
   showDlg({party:true,title:nxt?`WORLD ${k+1} COMPLETE!`:'CODE QUARRY COMPLETE!',
-    body:`<p>${esc(w.win)}</p>`+(nxt?`<p>Next up is <b>World ${k+2}: ${esc(nxt.name)}</b>, ${esc(nxt.subtitle)}.</p>`:`<p>You went from your first <code>print()</code> to a full mock exam question. Show someone what you built.</p>`),
+    body:`${upgradeBox(POWER_OF.diamond,true)}<p>${esc(w.win)}</p>`+(nxt?`<p>Next up is <b>World ${k+2}: ${esc(nxt.name)}</b>, ${esc(nxt.subtitle)}.</p>`:`<p>You went from your first <code>print()</code> to a full mock exam question. Show someone what you built.</p>`),
     buttons:nxt?[{label:'ENTER WORLD '+(k+2)+' &#9654;',cls:'next',fn:()=>go(nxt.quests[0].id)},{label:'STAY HERE'}]:[{label:'CLOSE',cls:'next'}]});
 }
 
@@ -738,8 +858,10 @@ async function run(){
   finish();
   const wasDone=s.done;
   if(res&&res.ok){
-    if(!wasDone){s.done=true;s.finished=new Date().toISOString();s.lastMsg=res.msg;S.xp+=q.boss?BOSS_XP:XP_PER;S.ores[q.ore]++;
-      const nx=playable()[idx(q.id)+1]; if(nx) S.current=nx.id; toast('+'+(q.boss?BOSS_XP:XP_PER)+' XP');}
+    if(!wasDone&&q.clash){s.done=true;s.lastMsg=res.msg;await clashAnswered(q,s);}
+    else if(!wasDone&&q.dig){s.done=true;s.finished=new Date().toISOString();s.lastMsg=res.msg;digFinish(q,s);}
+    else if(!wasDone){s.done=true;s.finished=new Date().toISOString();s.lastMsg=res.msg;S.xp+=q.boss?BOSS_XP:XP_PER;S.ores[q.ore]++;
+      const nx=playable()[idx(q.id)+1]; if(nx) S.current=nx.id; toast('+'+(q.boss?BOSS_XP:XP_PER)+' XP, +'+POWER_OF[q.ore]+' power');}
     s.lastMsg=res.msg; fb.innerHTML=wasDone?`<div class="fb good"><div class="h">STILL WORKS</div><p>${esc(res.msg)}</p></div>`:doneBox(q,true);
     if(!wasDone&&q.boss) worldComplete(worldOf(q.id));
   } else if(error){
@@ -753,7 +875,7 @@ async function run(){
 }
 
 /* ---------- Hints ---------- */
-$('hint').addEventListener('click',()=>{const s=qs(cur.id);activity();
+$('hint').addEventListener('click',()=>{if(cur.clash)return;const s=qs(cur.id);activity();
   if(cur.exam){if(!s.shown){s.shown=true;fb.innerHTML=`<div class="fb info"><div class="h">MODEL ANSWER</div><p>Read it, then close it and try writing your own version from memory.</p><pre>${esc(cur.solution)}</pre></div>`;}}
   else if(s.hints<cur.hints.length){s.hints++;
     fb.innerHTML=`<div class="fb info"><div class="h">HINT ${s.hints} OF ${cur.hints.length}</div>${cur.hints.slice(0,s.hints).map(h=>`<p>${esc(h)}</p>`).join('')}</div>`;}
@@ -772,7 +894,7 @@ $('worlds').addEventListener('click',e=>{const b=e.target.closest('.wbtn');if(!b
   const open=w.quests.find(q=>!qs(q.id).done&&unlocked(idx(q.id)))||w.quests[0]; go(open.id);});
 function go(id){
   if(ctl){ctl.abandoned=true;stopRun();}
-  qs(cur.id).code=code.value;cur=QUESTS[idx(id)];viewWorld=worldOf(id);S.current=id;save();setRunBtn(false);renderList();renderQuest();window.scrollTo({top:0,behavior:'smooth'});
+  qs(cur.id).code=code.value;cur=questById(id);if(!cur.dig&&!cur.clash){viewWorld=worldOf(id);S.current=id;}save();setRunBtn(false);renderList();renderQuest();window.scrollTo({top:0,behavior:'smooth'});
 }
 
 /* ---------- Editor keys ---------- */
@@ -788,9 +910,9 @@ code.addEventListener('keydown',e=>{
 });
 
 /* ---------- Tabs ---------- */
-function tab(which){for(const v of ['quests','board','parent']){$('view-'+v).hidden=v!==which;$('tab-'+v).setAttribute('aria-selected',v===which);}if(which==='parent')renderParent();if(which==='board')renderBoard();}
+function tab(which){for(const v of ['quests','clash','board','parent']){$('view-'+v).hidden=v!==which;$('tab-'+v).setAttribute('aria-selected',v===which);}if(which==='parent')renderParent();if(which==='board')renderBoard();if(which==='clash')renderClash();}
 function showReport(){tab('parent');window.scrollTo({top:0});}
-$('tab-quests').addEventListener('click',()=>tab('quests'));$('tab-parent').addEventListener('click',()=>tab('parent'));$('tab-board').addEventListener('click',()=>tab('board'));
+$('tab-quests').addEventListener('click',()=>tab('quests'));$('tab-parent').addEventListener('click',()=>tab('parent'));$('tab-board').addEventListener('click',()=>tab('board'));$('tab-clash').addEventListener('click',()=>tab('clash'));
 
 /* ---------- Parent view ---------- */
 const LEVELS=['Not started','Learning','Getting there','Confident'];
@@ -840,6 +962,10 @@ function renderParent(){
   $('p-rows').innerHTML=playableWorlds().map((w,k)=>`<tr class="wrow"><td colspan="6">WORLD ${k+1}: ${esc(w.name).toUpperCase()}</td></tr>`+w.quests.map((q,n)=>{const s=qs(q.id);const st=s.done?'<span class="pill d">Done</span>':(s.runs?'<span class="pill s">Started</span>':'<span class="pill n">Not started</span>');
     const ex=q.exam&&(s.examSecs||0)>0?` · ${mmss(s.examSecs)} of ${q.minutes}:00`:'';
     return `<tr><td>${q.boss?'':(n+1)+'. '}${esc(q.title)}<br><small>${esc(q.gcse)}${ex}</small></td><td>${st}</td><td>${s.runs}</td><td>${q.exam?'None allowed':s.hints+'/'+q.hints.length}</td><td>${s.shown?'Yes':'No'}</td><td>${s.finished?new Date(s.finished).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'–'}</td></tr>`;}).join('')).join('');
+  const dg=S.dig||{}, stats=Object.entries(dg.stats||{}), hist=Object.values(dg.history||{}), digTotal=hist.reduce((a,b)=>a+b,0);
+  $('p-dig-h').hidden=$('p-dig-note').hidden=$('p-dig-wrap').hidden=!digTotal;
+  $('p-dig-note').textContent='A short daily review of skills from quests already finished, with new numbers and wording each day. It shows whether skills are lasting. '+`So far: ${digTotal} question${digTotal===1?'':'s'} on ${hist.length} day${hist.length===1?'':'s'}.`;
+  $('p-dig-rows').innerHTML=stats.map(([k,v])=>`<tr><td><b>${esc(k)}</b></td><td>${v.done}</td><td>${v.first} of ${v.done}</td></tr>`).join('');
   const later=META.filter(m=>!WORLDS.some(w=>w.id===m.id));
   $('p-next-h').hidden=$('p-next').hidden=!later.length;
   $('p-next').innerHTML=later.map(w=>`<li><b>World ${META.indexOf(w)+1}: ${esc(w.name)}</b><p>${esc(w.subtitle[0].toUpperCase()+w.subtitle.slice(1))}. ${w.quest_count} quests.</p></li>`).join('');
@@ -847,7 +973,8 @@ function renderParent(){
 function reportText(){
   const sum=summaryParts();
   const rows=visibleSkills().filter(k=>skillLevel(k)>0).map(k=>`- ${k.name}: ${LEVELS[skillLevel(k)]} (${k.quests.filter(id=>qs(id).done).length}/${k.quests.length} quests)`);
-  return ['Code Quarry progress report',sum.headline,'',...sum.lines,...(rows.length?['','Skills:',...rows]:[]),'','These levels show how much help was needed. They are not a GCSE grade.'].join('\n');
+  const digSum=Object.values((S.dig||{}).history||{}).reduce((a,b)=>a+b,0);
+  return ['Code Quarry progress report',sum.headline,'',...sum.lines,...(digSum?['','Daily Dig: '+digSum+' review questions done.']:[]),...(rows.length?['','Skills:',...rows]:[]),'','These levels show how much help was needed. They are not a GCSE grade.'].join('\n');
 }
 $('print').addEventListener('click',()=>window.print());
 $('copy').addEventListener('click',async()=>{const t=reportText();let done=false;
@@ -873,7 +1000,7 @@ function toast(t){const d=document.createElement('div');d.className='toast';d.te
 function renderAll(){renderStats();renderList();renderQuest();renderParent();}
 
 /* ---------- Views ---------- */
-function showView(id){for(const v of ['view-loading','view-auth','view-family','view-quests','view-parent','view-board'])$(v).hidden=v!==id;}
+function showView(id){for(const v of ['view-loading','view-auth','view-family','view-quests','view-parent','view-board','view-clash','view-cert'])$(v).hidden=v!==id;}
 function loadingMsg(t,isErr){showView('view-loading');$('loading-msg').textContent=t;$('loading-msg').classList.toggle('err',!!isErr);}
 
 /* ---------- Login page ---------- */
@@ -883,7 +1010,7 @@ const AUTH={
   parent:{title:'PARENT LOG IN',submit:'LOG IN',fields:[['a-email','Email','email','email'],['a-pass','Password','password','current-password']],
     links:[['register','New here? Create a parent account'],['forgot','Forgotten your password?'],['player','I\'m a player']]},
   register:{title:'CREATE A PARENT ACCOUNT',submit:'CREATE ACCOUNT',fields:[['a-email','Email','email','email'],['a-pass','Password (at least 8 characters)','password','new-password']],consent:true,
-    links:[['parent','Already registered? Log in']],note:'We store your email address and, for each child, a username, their progress including the code they write in quests, and any school and year group you add. Leaderboards are off unless you turn them on for a child. You can delete all of it at any time from your family page.'},
+    links:[['parent','Already registered? Log in']],note:'We store your email address and, for each child, a username, their progress including the code they write in quests, and any school and year group you add. Leaderboards are off unless you turn them on for a child, and a child only joins a Family Clash if you add them. You can delete all of it at any time from your family page.'},
   forgot:{title:'RESET YOUR PASSWORD',submit:'EMAIL ME A LINK',fields:[['a-email','Email','email','email']],links:[['parent','Back to log in']]},
   newpass:{title:'CHOOSE A NEW PASSWORD',submit:'SAVE PASSWORD',fields:[['a-pass','New password (at least 8 characters)','password','new-password']],links:[]},
 };
@@ -979,6 +1106,7 @@ async function startGame(kid){
   placeCurrent();
   $('tabs').hidden=false;$('stats').hidden=false;
   showView('view-quests');renderAll();
+  pollClash();
   if(local&&local===best&&local!==server) queuePush();
   const old=!best&&readJson(KEY);
   if(old&&Object.values(old.q||{}).some(q=>q.runs>0)){
@@ -1016,7 +1144,7 @@ function childFields(p,k){k=k||{};
   const group=st=>{const list=SCHOOLS.filter(x=>x.stage===st);return list.length?'<optgroup label="'+st+'">'+list.map(x=>'<option value="'+x.urn+'"'+(x.urn===k.school_urn?' selected':'')+'>'+esc(x.name)+'</option>').join('')+'</optgroup>':'';};
   return '<label class="field">School<select id="'+p+'-school" data-year="'+p+'-year"><option value="">Not listed, or prefer not to say</option>'+group('Primary')+group('Secondary')+group('All-through')+'</select><small>We\'re starting with schools in Slough.</small></label>'
     +'<label class="field">Year group<select id="'+p+'-year">'+yearOptions(k.school_urn,k.year_group)+'</select></label>'
-    +'<label class="check"><input type="checkbox" id="'+p+'-board"'+(k.on_leaderboard?' checked':'')+'><span>Show on the leaderboards. Other logged-in players see a generated nickname and points, never your child\'s name or username. Families at the same school also see their year group.</span></label>';}
+    +'<label class="check"><input type="checkbox" id="'+p+'-board"'+(k.on_leaderboard?' checked':'')+'><span>Show on the leaderboards, including your child\'s school board. Any logged-in player can see a generated avatar name, avatar picture and points, never your child\'s name or username. Only families at the same school see their year group.</span></label>';}
 function readChildFields(p){const urn=$(p+'-school').value, year=$(p+'-year').value;
   return {school_urn:urn?Number(urn):null,year_group:year?Number(year):null,on_leaderboard:$(p+'-board').checked};}
 document.addEventListener('change',e=>{const y=e.target.dataset&&e.target.dataset.year;if(y&&$(y))$(y).innerHTML=yearOptions(e.target.value?Number(e.target.value):null,null);});
@@ -1034,14 +1162,15 @@ async function showFamily(){
   $('f-list').innerHTML=kids.data.length?kids.data.map(k=>{
     const st=states[k.id]||{q:{}}, n=QUESTS.filter(q=>st.q[q.id]&&st.q[q.id].done).length;
     const about=describeKid(k);
-    return '<li class="kid"><div><b>'+esc(k.username)+'</b><p>'+n+' of '+QUESTS.length+' quests finished</p>'+(about?'<p>'+about+'</p>':'')+'<p>'+(kids.data.indexOf(k)<activeSeats()?'Full game':'Free taster: World 1 only')+'</p><p>'+(k.on_leaderboard?'On the leaderboards as '+esc(k.nickname):'Not on the leaderboards')+'</p></div><div class="actions">'
+    return '<li class="kid"><div><b>'+esc(k.username)+'</b><p>'+n+' of '+QUESTS.length+' quests finished</p>'+(about?'<p>'+about+'</p>':'')+'<p>'+(k.on_leaderboard?'On the leaderboards as '+esc(k.nickname):'Not on the leaderboards')+'</p></div><div class="actions">'
       +'<button class="btn next small" data-report-kid="'+k.id+'" data-name="'+esc(k.username)+'">VIEW REPORT</button>'
       +'<button class="btn ghost small" data-board-kid="'+k.id+'">LEADERBOARD</button>'
       +'<button class="btn ghost small" data-edit-kid="'+k.id+'">EDIT DETAILS</button>'
       +'<button class="btn ghost small" data-pass-kid="'+k.id+'" data-name="'+esc(k.username)+'">NEW PASSWORD</button>'
       +'<button class="btn ghost small" data-remove-kid="'+k.id+'" data-name="'+esc(k.username)+'">REMOVE</button></div></li>';
   }).join(''):'<li>No children yet. Add one below, then they can log in.</li>';
-  renderPlan(kids.data.length);
+  renderPlan();
+  myKids=kids.data;await refreshParentClash(true);
 }
 $('f-add').addEventListener('submit',async e=>{e.preventDefault();
   const msg=(t,cls)=>{$('f-msg').textContent=t;$('f-msg').className='msg '+cls;};
@@ -1060,7 +1189,7 @@ $('f-list').addEventListener('click',async e=>{const b=e.target.closest('button'
     $('p-backrow').hidden=false;$('wipe').hidden=!r.data;$('wipeconfirm').textContent='';
     showView('view-parent');renderParent();window.scrollTo({top:0});
   }
-  if(b.dataset.boardKid){viewingChild=kidsById[b.dataset.boardKid];boardScope='overall';$('b-backrow').hidden=false;$('b-title').textContent='LEADERBOARD: '+viewingChild.username.toUpperCase();showView('view-board');renderBoard();window.scrollTo({top:0});}
+  if(b.dataset.boardKid){viewingChild=kidsById[b.dataset.boardKid];boardScope='overall';boardSchool=null;$('b-backrow').hidden=false;$('b-title').textContent='LEADERBOARD: '+viewingChild.username.toUpperCase();showView('view-board');renderBoard();window.scrollTo({top:0});}
   if(b.dataset.editKid){const k=kidsById[b.dataset.editKid];
     showDlg({title:'EDIT '+k.username.toUpperCase(),body:'<div class="authbox" style="max-width:none">'+childFields('e',k)+'</div>',
       buttons:[{label:'SAVE',cls:'next',fn:async()=>{const details=readChildFields('e');
@@ -1084,71 +1213,279 @@ $('f-delete').addEventListener('click',()=>{
       try{if(plan.sub&&plan.sub.status!=='CANCELLED'&&plan.sub.status!=='EXPIRED')await callFn('paypal',{action:'cancel'});await callChild({action:'delete_account'});await db.auth.signOut();location.reload();}catch(err){toast(err.message);}}}]});
 });
 
-/* ---------- Your plan (PayPal) ---------- */
-/* What PayPal charges is set by the plans made in setup-paypal.mjs. Keep these prices the same. */
-const planPrice=n=>10+5*(n-1), MAX_PAID=6;
-const money=n=>'\u00A3'+n;
-const longDate=t=>new Date(t).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
-let plan={sub:null,gift:false,error:false};
-async function loadPlan(){
-  plan={sub:null,gift:false,error:false};
-  const [s,g]=await Promise.all([db.from('subscriptions').select('paypal_id,status,seats,paid_until,next_billing_time').eq('parent_id',me.id).maybeSingle(),db.from('entitlements').select('paid_until').eq('parent_id',me.id).maybeSingle()]);
-  if(s.error||g.error){plan.error=true;return;}
-  plan.sub=s.data;
-  plan.gift=!!g.data&&(!g.data.paid_until||new Date(g.data.paid_until)>new Date());
-}
-const stillPaid=()=>plan.sub&&plan.sub.paid_until&&new Date(plan.sub.paid_until)>new Date();
-function activeSeats(){return plan.gift?99:(stillPaid()?plan.sub.seats:0);}
-function planMsg(t,good){const m=$('f-planmsg');if(m){m.textContent=t;m.className='msg '+(good?'good':'err');}}
-/* The promise a parent agrees to before paying. Get this wording checked before launch. */
-function agreeBox(text){return '<label class="check"><input type="checkbox" id="f-agree"><span>'+text+'</span></label>';}
-function renderPlan(n){
-  const box=$('f-plan'), children=n===1?'1 child':n+' children', price=money(planPrice(Math.max(n,1)));
-  const prices='<p>World 1 is always free. The full game has all 7 worlds and costs <b>'+money(10)+' for one child, plus '+money(5)+' for each extra child</b>, every 3 months.</p>';
-  const msg='<p class="msg" id="f-planmsg" role="status"></p>';
-  if(plan.error){box.innerHTML='<p>Plans aren\'t available right now. Please try again later.</p>';return;}
-  if(plan.gift){box.innerHTML='<h1>FULL GAME</h1><p>Your family has the full game for all your children, with nothing to pay.</p>';return;}
-  const sub=plan.sub;
-  if(sub&&sub.status==='ACTIVE'){
-    const covered=sub.seats===1?'1 child':sub.seats+' children';
-    let h='<h1>FULL GAME: '+covered.toUpperCase()+'</h1><p><b>'+money(planPrice(sub.seats))+'</b> every 3 months. '+(sub.next_billing_time?'Next payment: <b>'+longDate(sub.next_billing_time)+'</b>.':'')+'</p>';
-    if(n>MAX_PAID) h+='<p>Plans cover up to '+MAX_PAID+' children.</p>';
-    else if(n&&n!==sub.seats){
-      h+=n>sub.seats?'<p>You have '+children+', so '+(n-sub.seats===1?'one is':(n-sub.seats)+' are')+' on the free taster. Your newest children get the free taster first.</p>':'<p>You now have '+children+', so you could pay less.</p>';
-      h+=agreeBox('Change my plan to '+children+'. PayPal will charge '+price+' every 3 months, starting from my next payment, until I cancel.')+'<div class="actions"><button class="btn next" id="f-change" type="button">CHANGE PLAN IN PAYPAL</button></div>';
+/* ---------- Daily Dig ----------
+   Up to 3 short questions a day on skills from quests already finished. Each template lives with its world in the
+   protected content, so a child only ever gets questions from worlds they can play. The same child sees the same
+   questions all day, and the least recently finished templates come round first. */
+const digAvailable=()=>WORLDS.flatMap(w=>w.dig||[]);
+function digEnsure(){
+  if(role!=='child') return;
+  const day=today();
+  S.dig=S.dig||{day:null,picks:[],seen:{},history:{},stats:{}};
+  let changed=false;
+  if(S.dig.day!==day){S.dig.day=day;S.dig.picks=[];changed=true;digCache={};
+    for(const id of Object.keys(S.q)) if(id.startsWith('dig:')) delete S.q[id];}
+  if(S.dig.picks.length<DIG_PER_DAY){
+    const taken=new Set(S.dig.picks.map(p=>p.t)), all=digAvailable();
+    const usedSkills=new Set(S.dig.picks.map(p=>(all.find(t=>t.id===p.t)||{}).skill));
+    const ready=all.filter(t=>!taken.has(t.id)&&qs(t.after).done)
+      .map(t=>({t,seen:S.dig.seen[t.id]||'',tie:hashStr(me.id+day+t.id)}))
+      .sort((a,b)=>a.seen<b.seen?-1:a.seen>b.seen?1:a.tie-b.tie);
+    while(S.dig.picks.length<DIG_PER_DAY&&ready.length){
+      let i=ready.findIndex(x=>!usedSkills.has(x.t.skill));if(i<0)i=0;
+      const x=ready.splice(i,1)[0];usedSkills.add(x.t.skill);
+      S.dig.picks.push({t:x.t.id,seed:hashStr(me.id+day+x.t.id+'seed')});changed=true;
     }
-    box.innerHTML=h+'<div class="actions"><button class="btn ghost" id="f-cancel" type="button">CANCEL PLAN</button></div>'+msg;
-    return;
   }
-  const until=stillPaid()?new Date(plan.sub.paid_until):null;
-  let h='<h1>'+(until?'PLAN CANCELLED':(sub&&sub.status==='SUSPENDED'?'PAYMENT PROBLEM':'FREE TASTER'))+'</h1>';
-  if(sub&&sub.status==='SUSPENDED'&&!until) h+='<p>PayPal couldn\'t take your last payment, so the full game has closed. Your children\'s progress is safe.</p>';
-  else if(sub&&sub.status==='SUSPENDED') h+='<p>PayPal couldn\'t take your last payment. The full game stays open until <b>'+longDate(until)+'</b>.</p>';
-  else if(until) h+='<p>You won\'t be charged again. The full game stays open until <b>'+longDate(until)+'</b>.</p>';
-  box.innerHTML=h+prices;
-  if(!n){box.innerHTML+='<p>Add a child below, then you can choose a plan.</p>';return;}
-  if(n>MAX_PAID){box.innerHTML+='<p>Plans cover up to '+MAX_PAID+' children.</p>';return;}
-  const when=until?'PayPal will charge '+price+' around '+longDate(until)+', then every 3 months':'PayPal will charge '+price+' now, then every 3 months';
-  box.innerHTML+=agreeBox('I want the full game for '+children+'. '+when+' until I cancel, which I can do here at any time. I ask for access to start straight away, and I understand this affects my 14-day right to cancel.')
-    +'<div class="actions"><button class="btn next" id="f-pay" type="button">PAY WITH PAYPAL: '+price+'</button></div>'+msg;
+  if(changed) save();
 }
-const site=()=>location.origin+location.pathname;
-async function goToPayPal(action,btn){
-  if(!$('f-agree').checked){planMsg('Please tick the box first.');return;}
-  btn.disabled=true;planMsg('Opening PayPal...',true);
-  try{const r=await callFn('paypal',{action,site:site()});
-    if(r&&r.url){location.href=r.url;return;}
-    await showFamily();planMsg('Your plan has been updated.',true);
-  }catch(err){planMsg(err.message);btn.disabled=false;}
+let digCache={};
+function digQuests(){
+  digEnsure();
+  const all=digAvailable(), out=[];
+  ((S.dig&&S.dig.picks)||[]).forEach((p,n)=>{const t=all.find(x=>x.id===p.t);if(!t)return;
+    const id='dig:'+S.dig.day+':'+n;if(!digCache[id])digCache[id]=digQuest(t,S.dig.day,n,p.seed);out.push(digCache[id]);});
+  return out;
 }
-$('f-plan').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
-  if(b.id==='f-pay')goToPayPal('subscribe',b);
-  if(b.id==='f-change')goToPayPal('change',b);
-  if(b.id==='f-cancel'){const paid=plan.sub.paid_until?new Date(plan.sub.paid_until):null;
-    showDlg({title:'CANCEL YOUR PLAN?',body:'<p>You won\'t be charged again.'+(plan.sub.next_billing_time?' The full game stays open until <b>'+longDate(paid)+'</b>, then your children go back to World 1. Their progress is kept.':'')+'</p>',
-      buttons:[{label:'KEEP MY PLAN',cls:'next'},{label:'CANCEL PLAN',fn:async()=>{
-        try{await callFn('paypal',{action:'cancel'});await showFamily();planMsg('Your plan is cancelled. You won\'t be charged again.',true);}catch(err){planMsg(err.message);}}}]});
+const questById=id=>id.startsWith('clash:')?(clashQuests().find(q=>q.id===id)||QUESTS[Math.max(0,idx(S.current))]):id.startsWith('dig:')?(digQuests().find(q=>q.id===id)||QUESTS[0]):QUESTS[idx(id)];
+function renderDigBtn(){
+  const b=$('dig-btn');if(!b)return;
+  const list=digQuests(), done=list.filter(q=>qs(q.id).done).length;
+  b.disabled=!list.length;b.setAttribute('aria-current',!!(cur&&cur.dig));
+  b.innerHTML='<span>DAILY DIG</span><span class="wst" style="color:inherit">'+(!list.length?'FINISH A QUEST':(done===list.length?'DONE TODAY':done+'/'+list.length))+'</span>';
+}
+function renderDigList(){
+  const list=digQuests();
+  $('wname').innerHTML='DAILY DIG<small>Keep your skills sharp. New questions every day.</small>';
+  $('qlist').innerHTML=list.map((q,n)=>{const s=qs(q.id);
+    return '<li><button class="qbtn'+(s.done?' done':'')+'" data-id="'+q.id+'" aria-current="'+(q.id===cur.id)+'"><span class="st">'+(s.done?'&#10003;':n+1)+'</span><span class="nm">'+esc(q.title)+'<span class="tg">'+(s.done?'Complete':esc(q.skill))+'</span></span></button></li>';}).join('')
+    +'<li><button class="qbtn" data-id="'+S.current+'"><span class="st">&#9664;</span><span class="nm">Back to quests</span></button></li>';
+}
+function digFinish(q,s){
+  S.xp+=DIG_XP;
+  S.dig.history[q.day]=(S.dig.history[q.day]||0)+1;
+  S.dig.seen[q.template]=q.day;
+  const st=S.dig.stats[q.skill]||(S.dig.stats[q.skill]={done:0,first:0});
+  st.done++;if(s.runs===1&&!s.hints&&!s.shown)st.first++;
+  toast('+'+DIG_XP+' XP');
+}
+function digDoneBox(q,isNew){const s=qs(q.id), list=digQuests(), nxt=list.find(x=>!qs(x.id).done);
+  const allDone=!nxt, st=streak();
+  return '<div class="fb good"><div class="h">'+(isNew?(allDone?'DAILY DIG COMPLETE!':'CORRECT!'):'ALREADY COMPLETE')+'</div>'
+    +(isNew?'<div class="reward"><span>+'+DIG_XP+' XP</span></div><p>'+esc(s.lastMsg||'')+'</p>':'<p>You can keep experimenting here. It won\'t change your score.</p>')
+    +(allDone?'<p>That\'s today\'s dig done. You\'re on a '+st+' day streak. New questions tomorrow.</p>':'')
+    +'<div class="actions" style="margin-top:6px"><button class="btn next" data-go="'+(nxt?nxt.id:S.current)+'">'+(nxt?'NEXT QUESTION &#9654;':'BACK TO QUESTS &#9654;')+'</button></div></div>';
+}
+$('dig-btn').addEventListener('click',()=>{const list=digQuests();if(!list.length)return;go((list.find(q=>!qs(q.id).done)||list[0]).id);});
+
+/* ---------- Family Clash ----------
+   A private timed competition. The database (clash.sql) holds the clock, the players and the scores. Everyone asks it
+   for the latest position every few seconds. The questions come from the Daily Dig templates, using the Clash's seed. */
+const CLASH_WIN_XP=100;
+let clash=null, clashSeen={}, clashCache={id:null,list:[]}, clashOffset=0, myKids=[];
+const clashLeft=()=>clash&&clash.ends_at?Math.max(0,Math.floor((new Date(clash.ends_at)-(Date.now()+clashOffset))/1000)):0;
+function clashQuests(){if(!clash) return [];
+  if(clashCache.id!==clash.id) clashCache={id:clash.id,list:clashSet(clash,WORLDS)};
+  return clashCache.list;}
+async function fetchClash(){const {data,error}=await db.rpc('clash_current');if(error) return false;
+  clash=data||null;if(clash)clashOffset=new Date(clash.server_now)-Date.now();return true;}
+/* A child's game checks in every few seconds while a Clash is on, and less often otherwise. */
+let clashPollTimer=null;
+async function pollClash(){
+  clearTimeout(clashPollTimer);
+  if(role!=='child') return;
+  const before=clash&&clash.status, beforeId=clash&&clash.id;
+  if(await fetchClash()) clashChanged(before,beforeId);
+  clashPollTimer=setTimeout(pollClash,clash&&clash.status!=='ended'?5000:15000);
+}
+function clashChanged(before,beforeId){
+  const same=clash&&clash.id===beforeId;
+  $('tab-clash').hidden=!clash;
+  if(!clash){if(cur&&cur.clash)go(S.current);return;}
+  if(clash.status==='running'&&!(same&&before==='running')&&!clashSeen[clash.id+'run']){clashSeen[clash.id+'run']=true;
+    for(const a of clash.my_answers||[]) qs('clash:'+clash.id+':'+a).done=true;
+    showDlg({title:'THE CLASH IS ON!',body:'<p>'+clash.q_count+' questions, no hints, and the clock is running.</p>'+(clash.prize?'<p>Prize: <b>'+esc(clash.prize)+'</b></p>':''),
+      buttons:[{label:'GO &#9654;',cls:'next',fn:clashGo}]});}
+  if(clash.status==='ended'&&!clashSeen[clash.id+'end']){clashSeen[clash.id+'end']=true;clashEnded();}
+  if(!$('view-clash').hidden) renderClash();
+  if(cur&&cur.clash) renderList();
+}
+function clashEnded(){
+  const me=(clash.players||[]).find(p=>p.is_me);
+  S.clashPaid=S.clashPaid||{};
+  const won=clash.i_won&&!S.clashPaid[clash.id];
+  if(won){S.clashPaid[clash.id]=true;S.xp+=CLASH_WIN_XP;toast('+'+CLASH_WIN_XP+' XP');}
+  for(const id of Object.keys(S.q)) if(id.startsWith('clash:')) delete S.q[id];
+  save();renderStats();
+  const wasIn=cur&&cur.clash;
+  if(wasIn){if(ctl){ctl.abandoned=true;stopRun();}cur=QUESTS[Math.max(0,idx(S.current))];viewWorld=worldOf(cur.id);renderList();renderQuest();}
+  if(me){
+    showDlg({party:!!clash.i_won,title:clash.i_won?'YOU WON THE CLASH!':'CLASH OVER',
+      body:(clash.i_won?'<p>You scored the most points, and earned '+CLASH_WIN_XP+' bonus XP.</p>'+(clash.prize?'<p>Your prize: <b>'+esc(clash.prize)+'</b></p>':''):(clash.winner?'<p>The winner is <b>'+esc(clash.winner)+'</b>.</p>':'<p>Nobody answered a question this time.</p>'))+'<p>You scored <b>'+me.score+'</b> points.</p>',
+      buttons:[{label:'SEE THE SCORES',cls:'next',fn:()=>{showView('view-quests');tab('clash');}},{label:'CLOSE'}]});
   }
+}
+function clashGo(){const list=clashQuests();if(!list.length)return;
+  showView('view-quests');for(const v of ['quests','clash','board','parent'])$('tab-'+v).setAttribute('aria-selected',v==='quests');
+  go((list.find(q=>!qs(q.id).done)||list[0]).id);}
+function renderClashList(){const list=clashQuests();
+  $('wname').innerHTML='FAMILY CLASH<small>Answer as many as you can. Any order.</small>';
+  $('qlist').innerHTML=list.map(q=>{const s=qs(q.id);
+    return '<li><button class="qbtn'+(s.done?' done':'')+'" data-id="'+q.id+'" aria-current="'+(q.id===cur.id)+'"><span class="st">'+(s.done?'&#10003;':q.n+1)+'</span><span class="nm">'+esc(q.title)+'<span class="tg">'+(s.done?'Complete':esc(q.skill))+'</span></span></button></li>';}).join('');
+}
+async function clashAnswered(q,s){
+  const {data,error}=await db.rpc('clash_answer',{cid:clash.id,q:q.n,runs:s.runs});
+  s.clashSaved=!error&&data&&data.counted;
+  await pollClash();
+}
+function clashDoneBox(q,isNew){const s=qs(q.id), list=clashQuests(), nxt=list.find(x=>!qs(x.id).done);
+  return '<div class="fb good"><div class="h">'+(isNew?'CORRECT!':'ALREADY ANSWERED')+'</div>'+(isNew?'<p>'+esc(s.lastMsg||'')+'</p>':'')
+    +(isNew&&s.clashSaved===false?'<p>That one may not have counted, because time ran out or your connection dropped.</p>':'')
+    +'<div class="actions" style="margin-top:6px">'+(nxt?'<button class="btn next" data-go="'+nxt.id+'">NEXT QUESTION &#9654;</button>':'<span>You\'ve answered them all. Check the scoreboard.</span>')+'</div></div>';
+}
+function clashRows(c,rows,showUser){
+  const list=c.players||[];
+  rows.innerHTML=list.map((p,i)=>'<tr'+(p.is_me?' class="me"':'')+'><td>'+(i+1)+'</td><td>'+esc(p.nickname)+(p.is_me?' (you)':'')+(showUser&&p.username?' ('+esc(p.username)+')':'')+'</td><td>'+p.answered+' of '+c.q_count+'</td><td>'+p.score+'</td></tr>').join('');
+}
+function renderClash(){
+  if(!clash) return;
+  const running=clash.status==='running', lobby=clash.status==='lobby';
+  $('c-title').textContent=lobby?'CLASH STARTING SOON':running?'THE CLASH IS ON':'CLASH OVER';
+  $('c-note').textContent=lobby?'Waiting for the parent hosting to start it. You\'ll get a message when it begins.':running?'':(clash.winner?'The winner is '+clash.winner+'.':'Nobody answered a question this time.');
+  $('c-time').textContent=running?'TIME LEFT '+mmss(clashLeft()):'';
+  $('c-actions').innerHTML=running?'<button class="btn next" id="c-go">GO TO THE QUESTIONS &#9654;</button>':'';
+  clashRows(clash,$('c-rows'),false);
+}
+$('c-actions').addEventListener('click',e=>{if(e.target.closest('#c-go'))clashGo();});
+setInterval(()=>{if(role!=='child'||!clash||clash.status!=='running')return;
+  if(cur&&cur.clash)renderTimer();if(!$('view-clash').hidden)$('c-time').textContent='TIME LEFT '+mmss(clashLeft());},1000);
+
+/* ---------- Family Clash: the parent's side ---------- */
+let parentClashKey='', parentPollTimer=null;
+async function refreshParentClash(force){
+  clearTimeout(parentPollTimer);
+  if(role!=='parent') return;
+  const ok=await fetchClash();
+  const key=ok?JSON.stringify(clash&&{...clash,server_now:0}):'error';
+  if(force||key!==parentClashKey){parentClashKey=key;if(!$('view-family').hidden)renderParentClash(ok);if(force||(clash&&clash.status==='ended'))await renderTrophies();}
+  if(!$('view-family').hidden) parentPollTimer=setTimeout(refreshParentClash,clash&&clash.status!=='ended'?5000:30000);
+}
+function clashMsg(t,good){const m=$('f-clashmsg');if(m){m.textContent=t;m.className='msg '+(good?'good':'err');}}
+function renderParentClash(ok){
+  const box=$('f-clash');
+  if(!ok){box.innerHTML='<p>Family Clash isn\'t available right now. Please try again later.</p>';return;}
+  const open=clash&&clash.status!=='ended';
+  let h='';
+  if(open){
+    const lobby=clash.status==='lobby';
+    h+='<h1>'+(lobby?'GETTING READY':'THE CLASH IS ON')+'</h1>';
+    h+='<p>'+clash.minutes+' minutes, '+clash.q_count+' questions from World'+(clash.level>1?'s 1 to '+clash.level:' 1')+'.'+(clash.prize?' Prize: <b>'+esc(clash.prize)+'</b>.':'')+'</p>';
+    if(clash.code) h+='<p>Inviting another family? Give their parent this code. They add their own children, and they\'ll see only avatar names.</p><p class="clashcode">'+esc(clash.code)+'</p>';
+    if(!lobby) h+='<p class="clashtime" id="f-clashtime">TIME LEFT '+mmss(clashLeft())+'</p>';
+    if(lobby&&clash.is_host) h+=clashKidTicks();
+    h+='<div class="tblwrap"><table><thead><tr><th>PLACE</th><th>PLAYER</th><th>ANSWERED</th><th>SCORE</th>'+(lobby?'<th></th>':'')+'</tr></thead><tbody>'
+      +(clash.players||[]).map((p,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(p.nickname)+(p.username?' ('+esc(p.username)+')':'')+'</td><td>'+p.answered+' of '+clash.q_count+'</td><td>'+p.score+'</td>'+(lobby?'<td>'+((clash.is_host||p.child_id)?'<button class="btn ghost small" type="button" data-clash-remove="'+esc(p.nickname)+'">REMOVE</button>':'')+'</td>':'')+'</tr>').join('')+'</tbody></table></div>';
+    h+='<div class="actions">'+(lobby&&clash.is_host?'<button class="btn next" type="button" id="f-cstart">START THE CLASH</button>':'')+(clash.is_host?'<button class="btn ghost" type="button" id="f-cend">'+(lobby?'CANCEL':'END IT NOW')+'</button>':'')+'</div>';
+  } else {
+    if(clash) h+='<h1>'+(clash.winner?'WINNER: '+esc(clash.winner):'CLASH OVER')+'</h1>'+(clash.winner&&clash.prize?'<p>Prize: <b>'+esc(clash.prize)+'</b></p>':'')
+      +'<div class="tblwrap"><table><thead><tr><th>PLACE</th><th>PLAYER</th><th>ANSWERED</th><th>SCORE</th></tr></thead><tbody id="f-cfinal"></tbody></table></div>';
+    h+='<h1>START A CLASH</h1><p>A timed competition at home, with the same questions for everyone. There are no hints and no chat. Each child needs their own device.</p>';
+    const levels=WORLDS.map((w,i)=>({w,i})).filter(x=>(x.w.dig||[]).length);
+    h+='<label class="field">Questions from<select id="f-clevel">'+levels.map(x=>'<option value="'+(x.i+1)+'">'+(x.i?'Worlds 1 to '+(x.i+1)+' (up to '+esc(x.w.name)+')':'World 1 ('+esc(x.w.name)+')')+'</option>').join('')+'</select><small>Pick a level all your players have reached.</small></label>';
+    h+='<label class="field">Length<select id="f-cmins"><option value="30">30 minutes (10 questions)</option><option value="45" selected>45 minutes (15 questions)</option><option value="60">60 minutes (20 questions)</option></select></label>';
+    h+='<label class="field">Prize (optional)<input id="f-cprize" maxlength="80" autocomplete="off"><small>For example, "chooses the film tonight". Invited families will see this.</small></label>';
+    h+='<div class="actions"><button class="btn next" type="button" id="f-ccreate">SET UP A CLASH</button></div>';
+    h+='<h1>JOIN ANOTHER FAMILY\'S CLASH</h1><label class="field">Their code<input id="f-ccode" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false"></label><div class="actions"><button class="btn ghost" type="button" id="f-cjoin">LOOK UP THIS CODE</button></div>';
+  }
+  box.innerHTML=h+'<p class="msg" id="f-clashmsg" role="status"></p>';
+  if(clash&&!open&&$('f-cfinal')) clashRows(clash,$('f-cfinal'),true);
+}
+function clashKidTicks(){
+  const inIt=new Set((clash.players||[]).map(p=>p.child_id).filter(Boolean)), rest=myKids.filter(k=>!inIt.has(k.id));
+  if(!rest.length) return '';
+  return '<div class="ticks">'+rest.map(k=>'<button class="btn ghost small" type="button" data-clash-add="'+k.id+'">ADD '+esc(k.username.toUpperCase())+'</button>').join('')+'</div>';
+}
+async function clashCall(name,args,okMsg){
+  const {data,error}=await db.rpc(name,args);
+  if(error){clashMsg(error.message||'That didn\'t work. Please try again.');return null;}
+  await refreshParentClash(true);if(okMsg)clashMsg(okMsg,true);
+  return data||true;
+}
+$('f-clash').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.id==='f-ccreate'){
+    const r=await db.rpc('clash_create',{lvl:Number($('f-clevel').value),mins:Number($('f-cmins').value),prize_text:$('f-cprize').value});
+    if(r.error){clashMsg(r.error.message);return;}
+    await refreshParentClash(true);
+    for(const k of myKids){const a=await db.rpc('clash_add',{join_code:r.data.code,child:k.id});if(a.error)clashMsg(k.username+': '+a.error.message);}
+    await refreshParentClash(true);
+  }
+  if(b.id==='f-cstart') await clashCall('clash_start',{cid:clash.id});
+  if(b.id==='f-cend'){const lobby=clash.status==='lobby';
+    showDlg({title:lobby?'CANCEL THIS CLASH?':'END THE CLASH NOW?',body:lobby?'<p>Nobody has started yet, so nothing will be lost.</p>':'<p>The player with the most points so far will win.</p>',
+      buttons:[{label:'KEEP GOING',cls:'next'},{label:lobby?'CANCEL IT':'END IT',fn:()=>clashCall('clash_end',{cid:clash.id})}]});}
+  if(b.dataset.clashAdd) await clashCall('clash_add',{join_code:clash.code,child:b.dataset.clashAdd});
+  if(b.dataset.clashRemove!==undefined){const p=(clash.players||[]).find(x=>x.nickname===b.dataset.clashRemove);
+    const {error}=await db.rpc('clash_remove_by_nickname',{cid:clash.id,nick:p.nickname});
+    if(error){clashMsg(error.message);return;}await refreshParentClash(true);}
+  if(b.id==='f-cjoin'){
+    const code=$('f-ccode').value;
+    const r=await db.rpc('clash_preview',{join_code:code});
+    if(r.error){clashMsg(r.error.message);return;}
+    const v=r.data;
+    showDlg({title:'JOIN THIS CLASH?',body:'<p>'+v.minutes+' minutes, '+v.questions+' questions from World'+(v.level>1?'s 1 to '+v.level:' 1')+'. '+v.players+' player'+(v.players===1?'':'s')+' so far.</p>'+(v.prize?'<p>Prize set by the host: <b>'+esc(v.prize)+'</b></p>':'')+'<p>Only join if you know the family who gave you this code. Other players and their parents will see your child\'s avatar name and score, but not their name or username. There is no chat.</p><div class="ticks">'+myKids.map(k=>'<label class="check"><input type="checkbox" data-join-kid="'+k.id+'"><span>'+esc(k.username)+'</span></label>').join('')+'</div>',
+      buttons:[{label:'ADD THEM',cls:'next',fn:async()=>{
+        const kids=[...document.querySelectorAll('[data-join-kid]')].filter(x=>x.checked).map(x=>x.dataset.joinKid);
+        if(!kids.length){clashMsg('You didn\'t choose any children, so nobody joined.');return;}
+        let bad='';for(const child of kids){const a=await db.rpc('clash_add',{join_code:code,child});if(a.error)bad=a.error.message;}
+        await refreshParentClash(true);if(bad)clashMsg(bad);}},{label:'CANCEL'}]});
+  }
+});
+setInterval(()=>{if(role==='parent'&&clash&&clash.status==='running'&&$('f-clashtime'))$('f-clashtime').textContent='TIME LEFT '+mmss(clashLeft());},1000);
+let trophyRows=[];
+async function renderTrophies(){
+  const {data,error}=await db.rpc('clash_history');
+  const rows=error?[]:(data||[]);trophyRows=rows;
+  const wins=rows.filter(r=>r.won);
+  $('f-trophies-h').hidden=$('f-trophies').hidden=!rows.length;
+  const tally={};for(const r of wins)tally[r.username]=(tally[r.username]||0)+1;
+  $('f-trophies').innerHTML=(Object.keys(tally).length?'<li><b>Trophy count</b><p>'+Object.entries(tally).sort((a,b)=>b[1]-a[1]).map(([u,n])=>esc(u)+': '+n).join(', ')+'</p></li>':'')
+    +rows.slice(0,10).map((r,i)=>'<li class="kid"><div><b>'+(r.won?'&#127942; ':'')+esc(r.username)+'</b><p>'+new Date(r.played).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+': '+r.score+' points, against '+Math.max(0,r.players-1)+' other'+(r.players===2?'':'s')+(r.won&&r.prize?'. Prize: '+esc(r.prize):'')+'</p></div>'+(r.won?'<div class="actions"><button class="btn ghost small" data-cert="'+i+'">CERTIFICATE</button></div>':'')+'</li>').join('');
+}
+$('f-trophies').addEventListener('click',e=>{const b=e.target.closest('[data-cert]');if(!b)return;const r=trophyRows[Number(b.dataset.cert)];
+  $('cert').innerHTML='<h1>CODE QUARRY<br>FAMILY CLASH CHAMPION</h1><p>This certificate is awarded to</p><div class="who">'+esc(r.username)+'</div><p>for winning a Family Clash with <b>'+r.score+'</b> points</p><p>'+new Date(r.played).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'</p>'+(r.prize?'<p>Prize: '+esc(r.prize)+'</p>':'');
+  document.body.classList.add('printcert');showView('view-cert');window.scrollTo({top:0});});
+$('cert-print').addEventListener('click',()=>window.print());
+$('cert-back').addEventListener('click',()=>{document.body.classList.remove('printcert');showFamily();});
+
+/* ---------- Support (donations) ---------- */
+/* Every world is free. Donations go through Ko-fi, which is only a link: nothing on Ko-fi changes what anyone can play.
+   Put your Ko-fi page here, such as 'https://ko-fi.com/yourname'. While it's empty, the button is hidden. */
+const DONATE_URL='https://ko-fi.com/vasanthmshanmugam';
+/* Prices of the old PayPal plans, only to tell a family what a plan left over from before is still charging. */
+const planPrice=n=>10+5*(n-1);
+const money=n=>'£'+n;
+const longDate=t=>new Date(t).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+let plan={sub:null,error:false};
+async function loadPlan(){
+  plan={sub:null,error:false};
+  const s=await db.from('subscriptions').select('paypal_id,status,seats,paid_until,next_billing_time').eq('parent_id',me.id).maybeSingle();
+  if(s.error){plan.error=true;return;}
+  plan.sub=s.data;
+}
+function planMsg(t,good){const m=$('f-planmsg');if(m){m.textContent=t;m.className='msg '+(good?'good':'err');}}
+function renderPlan(){
+  const sub=plan.sub;
+  let h='<h1>FREE FOR EVERY FAMILY</h1><p>All '+META.length+" worlds are free for all your children, with nothing to pay. Code Quarry is a small independent project. If it helps your child, you can give a donation to help keep it running. It's completely optional and doesn't change anything in the game.</p>";
+  if(DONATE_URL) h+='<div class="actions"><a class="btn next" href="'+esc(DONATE_URL)+'" target="_blank" rel="noopener">DONATE ON KO-FI</a></div>';
+  /* A PayPal plan from before the game went free must still be stoppable, and an account can't be deleted while one is live. */
+  if(sub&&(sub.status==='ACTIVE'||sub.status==='SUSPENDED'))
+    h+='<p>You still have a PayPal plan from before Code Quarry went free. It may keep charging <b>'+money(planPrice(sub.seats))+'</b> every 3 months until you cancel it.</p><div class="actions"><button class="btn ghost" id="f-cancel" type="button">CANCEL PAYPAL PLAN</button></div>';
+  $('f-plan').innerHTML=h+'<p class="msg" id="f-planmsg" role="status"></p>';
+}
+$('f-plan').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.id!=='f-cancel')return;
+  showDlg({title:'CANCEL YOUR PAYPAL PLAN?',body:"<p>You won't be charged again. Your children keep every world and all their progress.</p>",
+    buttons:[{label:'KEEP IT',cls:'next'},{label:'CANCEL PLAN',fn:async()=>{
+      try{await callFn('paypal',{action:'cancel'});await showFamily();planMsg("Your PayPal plan is cancelled. You won't be charged again.",true);}catch(err){planMsg(err.message);}}}]});
 });
 /* PayPal sends the parent back here. The server asks PayPal what happened, so nothing in this address can unlock anything. */
 async function finishPayPalReturn(){
@@ -1161,26 +1498,41 @@ async function finishPayPalReturn(){
 }
 
 /* ---------- Leaderboards ---------- */
-let boardScope='overall', boardAsk=0;
+let boardScope='overall', boardPeriod='all', boardSchool=null, boardAsk=0;
 async function renderBoard(){
-  const kid=role==='child'?myKid:viewingChild, ask=++boardAsk, school=boardScope==='school';
+  const kid=role==='child'?myKid:viewingChild, ask=++boardAsk, school=boardScope==='school', week=boardPeriod==='week';
+  $('b-all').setAttribute('aria-selected',!week);$('b-all').setAttribute('aria-pressed',!week);
+  $('b-week').setAttribute('aria-selected',week);$('b-week').setAttribute('aria-pressed',week);
   $('b-overall').setAttribute('aria-selected',!school);$('b-overall').setAttribute('aria-pressed',!school);
   $('b-school').setAttribute('aria-selected',school);$('b-school').setAttribute('aria-pressed',school);
   const sub=role==='child'?'you':'your child', Sub=role==='child'?'You':'Your child';
-  $('b-note').textContent=kid.on_leaderboard?Sub+(role==='child'?' appear as ':' appears as ')+kid.nickname+'. Points come from finished quests.':(role==='child'?'You aren\'t on the leaderboards yet. Your parent or carer can turn this on for you.':'Your child isn\'t on the leaderboards. You can turn this on with EDIT DETAILS on your family page.');
-  $('b-yearh').hidden=!school;$('b-rows').innerHTML='';$('b-wrap').hidden=true;
-  if(school&&!kid.school_urn){$('b-msg').className='msg';$('b-msg').textContent=role==='child'?'Your parent or carer hasn\'t added your school yet.':'Add your child\'s school with EDIT DETAILS to see this board.';return;}
+  $('b-note').textContent=(kid.on_leaderboard?Sub+(role==='child'?' appear as ':' appears as ')+kid.nickname+'. Points come from finished quests and Daily Digs.':(role==='child'?'You aren\'t on the leaderboards yet. Your parent or carer can turn this on for you.':'Your child isn\'t on the leaderboards. You can turn this on with EDIT DETAILS on your family page.'))+(week?' This board starts again every Monday.':'');
+  $('b-pickwrap').hidden=!school;$('b-yearh').hidden=true;$('b-rows').innerHTML='';$('b-wrap').hidden=true;
   $('b-msg').className='msg';$('b-msg').textContent='Loading...';
+  if(school&&!SCHOOLS.length){
+    const sc=await db.from('schools').select('urn,name,stage,low_year,high_year').order('name');
+    if(ask!==boardAsk) return;
+    if(sc.error){$('b-msg').className='msg err';$('b-msg').textContent='The list of schools didn\'t load. Please try again.';return;}
+    SCHOOLS=sc.data;
+  }
+  const urn=boardSchool||kid.school_urn||null;
+  if(school) $('b-pick').innerHTML='<option value="">Choose a school</option>'+SCHOOLS.map(x=>'<option value="'+x.urn+'"'+(x.urn===urn?' selected':'')+'>'+esc(x.name)+'</option>').join('');
+  if(school&&!urn){$('b-msg').textContent='Choose a school to see its board.';return;}
+  const showYear=school&&urn===kid.school_urn;
+  $('b-yearh').hidden=!showYear;
   if(role==='child') await pushNow();
-  const {data,error}=await db.rpc('leaderboard',{scope:boardScope,for_child:role==='parent'?kid.id:null});
+  const {data,error}=await db.rpc('leaderboard',{scope:boardScope,for_child:role==='parent'?kid.id:null,period:boardPeriod,for_school:school?urn:null});
   if(ask!==boardAsk) return;
   if(error){$('b-msg').className='msg err';$('b-msg').textContent='The leaderboard didn\'t load. Please try again.';return;}
-  $('b-msg').textContent=data.length?'':'Nobody is on this board yet. Finish a quest and be the first.';
+  $('b-msg').textContent=data.length?'':(week?'Nobody has scored on this board this week. Finish a quest and be the first.':'Nobody is on this board yet. Finish a quest and be the first.');
   $('b-wrap').hidden=!data.length;
-  $('b-rows').innerHTML=data.map(r=>'<tr'+(r.is_me?' class="me"':'')+'><td>'+r.place+'</td><td>'+esc(r.nickname)+(r.is_me?' ('+sub+')':'')+'</td>'+(school?'<td>'+(r.year_group?'Year '+r.year_group:'&ndash;')+'</td>':'')+'<td>'+r.points+'</td></tr>').join('');
+  $('b-rows').innerHTML=data.map(r=>'<tr'+(r.is_me?' class="me"':'')+'><td>'+r.place+'</td><td><span class="board-name">'+avatarSvg(AVATARS[r.avatar_tier]||AVATARS[0],24,(AVATARS[r.avatar_tier]||AVATARS[0]).name)+'<span>'+esc(r.nickname)+(r.is_me?' ('+sub+')':'')+'</span></span></td>'+(showYear?'<td>'+(r.year_group?'Year '+r.year_group:'&ndash;')+'</td>':'')+'<td>'+r.points+'</td></tr>').join('');
 }
 $('b-overall').addEventListener('click',()=>{boardScope='overall';renderBoard();});
 $('b-school').addEventListener('click',()=>{boardScope='school';renderBoard();});
+$('b-all').addEventListener('click',()=>{boardPeriod='all';renderBoard();});
+$('b-week').addEventListener('click',()=>{boardPeriod='week';renderBoard();});
+$('b-pick').addEventListener('change',e=>{boardSchool=e.target.value?Number(e.target.value):null;renderBoard();});
 $('b-back').addEventListener('click',()=>{$('b-backrow').hidden=true;$('b-title').textContent='LEADERBOARD';showFamily();});
 
 /* ---------- Start ---------- */
