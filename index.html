@@ -393,7 +393,7 @@ tr.me td{background:var(--panel-2);color:var(--gold);font-weight:700}
   </section>
 </main>
 <footer class="wrap foot">
-  <p>World 1 of Code Quarry is a free taster, with no ads or tracking. A login is needed to play. We store the parent's email address and, for each child, a username, their progress including the code they write in quests, and any school and year group a parent adds. If a parent opts in, a child's generated avatar name, avatar picture and points appear on leaderboards that only logged-in players can see, and their avatar name and score appear in any Family Clash that parent adds them to. Payments are handled by PayPal, and we never see card or bank details. The Python engine and fonts download from jsDelivr and Google Fonts. Topics follow the GCSE Computer Science specifications (OCR J277 and AQA 8525), but the game isn't endorsed by either exam board.</p>
+  <p>Code Quarry is free for every family, with all 7 worlds and no ads or tracking. A login is needed to play. We store the parent's email address and, for each child, a username, their progress including the code they write in quests, and any school and year group a parent adds. If a parent opts in, a child's generated avatar name, avatar picture and points appear on leaderboards that only logged-in players can see, and their avatar name and score appear in any Family Clash that parent adds them to. Optional donations are handled by Ko-fi, and we never see card or bank details. The Python engine and fonts download from jsDelivr and Google Fonts. Topics follow the GCSE Computer Science specifications (OCR J277 and AQA 8525), but the game isn't endorsed by either exam board.</p>
 </footer>
 <dialog id="dlg" aria-labelledby="dlg-title"><div class="fall" id="dlg-fall" aria-hidden="true"></div><h2 id="dlg-title"></h2><div id="dlg-body"></div><div class="actions" id="dlg-actions"></div></dialog>
 
@@ -1208,7 +1208,7 @@ $('f-list').addEventListener('click',async e=>{const b=e.target.closest('button'
 });
 $('p-back').addEventListener('click',()=>{$('p-backrow').hidden=true;$('wipe').hidden=true;showFamily();});
 $('f-delete').addEventListener('click',()=>{
-  showDlg({title:'DELETE YOUR ACCOUNT?',body:'<p>This cancels any PayPal plan and deletes your account, your children\'s logins and all their progress. It can\'t be undone.</p>',
+  showDlg({title:'DELETE YOUR ACCOUNT?',body:'<p>This deletes your account, your children\'s logins and all their progress. It can\'t be undone.</p>',
     buttons:[{label:'CANCEL',cls:'next'},{label:'DELETE EVERYTHING',fn:async()=>{
       try{if(plan.sub&&plan.sub.status!=='CANCELLED'&&plan.sub.status!=='EXPIRED')await callFn('paypal',{action:'cancel'});await callChild({action:'delete_account'});await db.auth.signOut();location.reload();}catch(err){toast(err.message);}}}]});
 });
